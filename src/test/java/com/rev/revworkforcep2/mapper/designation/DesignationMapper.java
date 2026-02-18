@@ -1,6 +1,5 @@
 package com.rev.revworkforcep2.mapper.designation;
 
-
 import com.rev.revworkforcep2.dto.request.designation.CreateDesignationRequest;
 import com.rev.revworkforcep2.dto.request.designation.UpdateDesignationRequest;
 import com.rev.revworkforcep2.dto.response.designation.DesignationResponse;
@@ -11,13 +10,10 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface DesignationMapper {
 
-    // Create mapping
     Designation toEntity(CreateDesignationRequest request);
 
-    // Entity → Response mapping
     DesignationResponse toResponse(Designation designation);
 
-    // Update mapping
-    void updateEntityFromRequest(UpdateDesignationRequest request,
-                                 @MappingTarget Designation designation);
+    void updateEntityFromRequest(UpdateDesignationRequest request, @MappingTarget Designation designation);
 }
+
