@@ -35,9 +35,30 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
+
+                        // Public endpoints
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // Admin only
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        // Manager only
+                        .requestMatchers("/api/manager/**")
+                        .hasRole("MANAGER")
+
+                        // Employee endpoints
+                        .requestMatchers("/api/employee/**")
+                        .hasAnyRole("EMPLOYEE", "MANAGER", "ADMIN")
+
+                        // Everything else authenticated
                         .anyRequest().authenticated()
                 )
+
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
 
