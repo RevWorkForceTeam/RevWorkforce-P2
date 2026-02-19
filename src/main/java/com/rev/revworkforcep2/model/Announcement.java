@@ -19,6 +19,8 @@ public class Announcement extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(length = 2000)
+    @Column(length = 2000, nullable = false)
     private String content;
+
+
 }
