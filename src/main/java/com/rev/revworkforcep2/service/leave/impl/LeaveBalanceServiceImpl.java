@@ -13,11 +13,13 @@ import com.rev.revworkforcep2.service.leave.LeaveBalanceService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class LeaveBalanceServiceImpl implements LeaveBalanceService {
 
     private final LeaveBalanceRepository leaveBalanceRepository;
@@ -44,9 +46,9 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         balance.setUsedDays(0);
         balance.setRemainingDays(totalQuota);
 
-        return leaveMapper.toLeaveBalanceResponse(
-                leaveBalanceRepository.save(balance)
-        );
+        LeaveBalance saved = leaveBalanceRepository.save(balance);
+
+        return leaveMapper.toResponse(saved);
     }
 
     // =========================================
@@ -57,11 +59,11 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
 
         LeaveBalance balance = leaveBalanceRepository
                 .findByUserIdAndLeaveTypeId(employeeId, leaveTypeId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Leave balance not found"
-                ));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Leave balance not found")
+                );
 
-        return leaveMapper.toLeaveBalanceResponse(balance);
+        return leaveMapper.toResponse(balance);
     }
 
     // =========================================
@@ -70,14 +72,33 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
     @Override
     public List<LeaveBalanceResponse> getEmployeeBalances(Long employeeId) {
 
-        List<LeaveBalance> balances = leaveBalanceRepository.findByUserId(employeeId);
+        List<LeaveBalance> balances =
+                leaveBalanceRepository.findByUserId(employeeId);
 
         if (balances.isEmpty()) {
             throw new ResourceNotFoundException("No leave balances found");
         }
 
         return balances.stream()
-                .map(leaveMapper::toLeaveBalanceResponse)
+                .map(leaveMapper::toResponse)
                 .toList();
+    }
+    @Override
+    public void deductLeave(Long employeeId, Long leaveTypeId, int days) {
+
+        LeaveBalance balance = leaveBalanceRepository
+                .findByUserIdAndLeaveTypeId(employeeId, leaveTypeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Leave balance not found")
+                );
+
+        if (balance.getRemainingDays() < days) {
+            throw new IllegalArgumentException("Insufficient leave balance");
+        }
+
+        balance.setUsedDays(balance.getUsedDays() + days);
+        balance.setRemainingDays(balance.getRemainingDays() - days);
+
+        leaveBalanceRepository.save(balance);
     }
 }

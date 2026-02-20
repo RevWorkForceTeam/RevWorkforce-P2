@@ -11,4 +11,5 @@ public interface LeaveBalanceService {
     LeaveBalanceResponse getBalance(Long employeeId, Long leaveTypeId);
 
     List<LeaveBalanceResponse> getEmployeeBalances(Long employeeId);
+    void deductLeave(Long employeeId, Long leaveTypeId, int days);
 }

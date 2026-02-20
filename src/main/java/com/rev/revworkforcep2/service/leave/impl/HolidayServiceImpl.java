@@ -22,37 +22,48 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Override
     public HolidayResponse createHoliday(CreateHolidayRequest request) {
-        Holiday entity = leaveMapper.toHolidayEntity(request);
-        return leaveMapper.toHolidayResponse(holidayRepository.save(entity));
+
+        Holiday entity = leaveMapper.toEntity(request);   // ✅ FIXED
+
+        Holiday saved = holidayRepository.save(entity);
+
+        return leaveMapper.toResponse(saved);   // ✅ FIXED
     }
 
     @Override
     public HolidayResponse updateHoliday(Long id, UpdateHolidayRequest request) {
+
         Holiday entity = holidayRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Holiday not found"));
 
-        leaveMapper.updateHolidayEntity(entity, request);
-        return leaveMapper.toHolidayResponse(holidayRepository.save(entity));
+        leaveMapper.updateEntity(request, entity);   // ✅ FIXED ORDER
+
+        Holiday updated = holidayRepository.save(entity);
+
+        return leaveMapper.toResponse(updated);   // ✅ FIXED
     }
 
     @Override
     public HolidayResponse getHolidayById(Long id) {
+
         Holiday entity = holidayRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Holiday not found"));
 
-        return leaveMapper.toHolidayResponse(entity);
+        return leaveMapper.toResponse(entity);   // ✅ FIXED
     }
 
     @Override
     public List<HolidayResponse> getAllHolidays() {
+
         return holidayRepository.findAll()
                 .stream()
-                .map(leaveMapper::toHolidayResponse)
+                .map(leaveMapper::toResponse)   // ✅ FIXED
                 .toList();
     }
 
     @Override
     public void deleteHoliday(Long id) {
+
         Holiday entity = holidayRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Holiday not found"));
 

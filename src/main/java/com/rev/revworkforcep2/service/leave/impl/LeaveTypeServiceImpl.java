@@ -3,6 +3,7 @@ package com.rev.revworkforcep2.service.leave.impl;
 import com.rev.revworkforcep2.dto.request.leave.CreateLeaveTypeRequest;
 import com.rev.revworkforcep2.dto.request.leave.UpdateLeaveTypeRequest;
 import com.rev.revworkforcep2.dto.response.leave.LeaveTypeResponse;
+import com.rev.revworkforcep2.exception.ConflictException;
 import com.rev.revworkforcep2.exception.ResourceNotFoundException;
 import com.rev.revworkforcep2.mapper.leave.LeaveMapper;
 import com.rev.revworkforcep2.model.LeaveType;
@@ -23,42 +24,50 @@ public class LeaveTypeServiceImpl implements LeaveTypeService {
     @Override
     public LeaveTypeResponse createLeaveType(CreateLeaveTypeRequest request) {
 
-        // ✅ Name uniqueness validation
         if (leaveTypeRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("LeaveType already exists with name: " + request.getName());
+            throw new ConflictException(
+                    "LeaveType already exists with name: " + request.getName()
+            );
         }
 
-        LeaveType entity = leaveMapper.toLeaveType(request);
+        LeaveType entity = leaveMapper.toEntity(request);
         LeaveType saved = leaveTypeRepository.save(entity);
 
-        return leaveMapper.toLeaveTypeResponse(saved);
+        return leaveMapper.toResponse(saved);
     }
 
     @Override
     public LeaveTypeResponse updateLeaveType(Long id, UpdateLeaveTypeRequest request) {
 
         LeaveType entity = leaveTypeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("LeaveType not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("LeaveType not found with id: " + id)
+                );
 
-        // ✅ Check name conflict (exclude current record)
         if (!entity.getName().equalsIgnoreCase(request.getName())
                 && leaveTypeRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("LeaveType already exists with name: " + request.getName());
+
+            throw new ConflictException(
+                    "LeaveType already exists with name: " + request.getName()
+            );
         }
 
-        leaveMapper.updateEntity(entity, request);
+        leaveMapper.updateEntity(request, entity);
+
         LeaveType updated = leaveTypeRepository.save(entity);
 
-        return leaveMapper.toLeaveTypeResponse(updated);
+        return leaveMapper.toResponse(updated);
     }
 
     @Override
     public LeaveTypeResponse getLeaveTypeById(Long id) {
 
         LeaveType entity = leaveTypeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("LeaveType not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("LeaveType not found with id: " + id)
+                );
 
-        return leaveMapper.toLeaveTypeResponse(entity);
+        return leaveMapper.toResponse(entity);
     }
 
     @Override
@@ -66,7 +75,7 @@ public class LeaveTypeServiceImpl implements LeaveTypeService {
 
         return leaveTypeRepository.findAll()
                 .stream()
-                .map(leaveMapper::toLeaveTypeResponse)
+                .map(leaveMapper::toResponse)
                 .toList();
     }
 
@@ -74,8 +83,14 @@ public class LeaveTypeServiceImpl implements LeaveTypeService {
     public void deleteLeaveType(Long id) {
 
         LeaveType entity = leaveTypeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("LeaveType not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("LeaveType not found with id: " + id)
+                );
 
         leaveTypeRepository.delete(entity);
     }
+//    @Override
+//    public List<LeaveType> getAllLeaveTypeEntities() {
+//        return leaveTypeRepository.findAll();
+//    }
 }

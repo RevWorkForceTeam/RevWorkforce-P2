@@ -3,105 +3,62 @@ package com.rev.revworkforcep2.mapper.leave;
 import com.rev.revworkforcep2.dto.request.leave.*;
 import com.rev.revworkforcep2.dto.response.leave.*;
 import com.rev.revworkforcep2.model.*;
-import org.springframework.stereotype.Component;
+import org.mapstruct.*;
 
-@Component
-public class LeaveMapper {
+@Mapper(componentModel = "spring")
+public interface LeaveMapper {
 
     // =====================================================
     // LeaveApplication Mapping
     // =====================================================
-    public LeaveApplication toLeaveApplication(ApplyLeaveRequest request, User user, LeaveType leaveType) {
-        LeaveApplication entity = new LeaveApplication();
-        entity.setUser(user);
-        entity.setLeaveType(leaveType);
-        entity.setStartDate(request.getFromDate());
-        entity.setEndDate(request.getToDate());
-        entity.setReason(request.getReason());
-        return entity;
-    }
 
-    public LeaveApplicationResponse toLeaveApplicationResponse(LeaveApplication entity) {
-        LeaveApplicationResponse response = new LeaveApplicationResponse();
-        response.setId(entity.getId());
-        response.setUserId(entity.getUser().getId());
-        response.setLeaveTypeId(entity.getLeaveType().getId());
-        response.setFromDate(entity.getStartDate());
-        response.setToDate(entity.getEndDate());
-        response.setReason(entity.getReason());
-        response.setStatus(entity.getStatus());
-        return response;
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "startDate", source = "request.fromDate")
+    @Mapping(target = "endDate", source = "request.toDate")
+    @Mapping(target = "user", source = "user")
+    @Mapping(target = "leaveType", source = "leaveType")
+    LeaveApplication toEntity(ApplyLeaveRequest request, User user, LeaveType leaveType);
 
-    public LeaveApplication toEntity(ApplyLeaveRequest request, User user, LeaveType leaveType) {
-        return toLeaveApplication(request, user, leaveType);
-    }
+    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "leaveTypeId", source = "leaveType.id")
+    @Mapping(target = "fromDate", source = "startDate")
+    @Mapping(target = "toDate", source = "endDate")
+    LeaveApplicationResponse toResponse(LeaveApplication entity);
 
-    public LeaveApplicationResponse toResponse(LeaveApplication entity) {
-        return toLeaveApplicationResponse(entity);
-    }
 
     // =====================================================
     // LeaveType Mapping
     // =====================================================
-    public LeaveType toLeaveType(CreateLeaveTypeRequest request) {
-        LeaveType entity = new LeaveType();
-        entity.setName(request.getName());
-        entity.setDefaultQuota(request.getDefaultQuota());
-        return entity;
-    }
 
-    public void updateLeaveType(LeaveType entity, UpdateLeaveTypeRequest request) {
-        entity.setName(request.getName());
-        entity.setDefaultQuota(request.getDefaultQuota());
-    }
+    LeaveType toEntity(CreateLeaveTypeRequest request);
 
-    public LeaveTypeResponse toLeaveTypeResponse(LeaveType entity) {
-        LeaveTypeResponse response = new LeaveTypeResponse();
-        response.setId(entity.getId());
-        response.setName(entity.getName());
-        response.setDefaultQuota(entity.getDefaultQuota());
-        return response;
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntity(UpdateLeaveTypeRequest request, @MappingTarget LeaveType entity);
 
-    public void updateEntity(LeaveType entity, UpdateLeaveTypeRequest request) {
-        updateLeaveType(entity, request);
-    }
+    LeaveTypeResponse toResponse(LeaveType entity);
+
 
     // =====================================================
     // Holiday Mapping
     // =====================================================
-    public Holiday toHolidayEntity(CreateHolidayRequest request) {
-        Holiday entity = new Holiday();
-        entity.setName(request.getName());
-        entity.setHolidayDate(request.getHolidayDate());
-        return entity;
-    }
 
-    public void updateHolidayEntity(Holiday entity, UpdateHolidayRequest request) {
-        if (request.getName() != null) entity.setName(request.getName());
-        if (request.getHolidayDate() != null) entity.setHolidayDate(request.getHolidayDate());
-    }
+    Holiday toEntity(CreateHolidayRequest request);
 
-    public HolidayResponse toHolidayResponse(Holiday entity) {
-        HolidayResponse response = new HolidayResponse();
-        response.setId(entity.getId());
-        response.setName(entity.getName());
-        response.setHolidayDate(entity.getHolidayDate());
-        return response;
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntity(UpdateHolidayRequest request, @MappingTarget Holiday entity);
+
+    HolidayResponse toResponse(Holiday entity);
 
 
     // =====================================================
     // LeaveBalance Mapping
     // =====================================================
-    public LeaveBalanceResponse toLeaveBalanceResponse(LeaveBalance entity) {
-        LeaveBalanceResponse res = new LeaveBalanceResponse();
-        res.setEmployeeId(entity.getUser().getId());
-        res.setLeaveTypeId(entity.getLeaveType().getId());
-        res.setTotalQuota(entity.getTotalDays());
-        res.setUsed(entity.getUsedDays());
-        res.setRemaining(entity.getRemainingDays());
-        return res;
-    }
+
+    @Mapping(target = "employeeId", source = "user.id")
+    @Mapping(target = "leaveTypeId", source = "leaveType.id")
+    @Mapping(target = "totalQuota", source = "totalDays")
+    @Mapping(target = "used", source = "usedDays")
+    @Mapping(target = "remaining", source = "remainingDays")
+    LeaveBalanceResponse toResponse(LeaveBalance entity);
 }
