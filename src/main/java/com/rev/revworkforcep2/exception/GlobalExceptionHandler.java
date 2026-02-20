@@ -3,6 +3,8 @@ package com.rev.revworkforcep2.exception;
 import com.rev.revworkforcep2.util.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -22,10 +24,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
     }
 
-    // Handle Validation Errors (from @Valid)
-    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    // Handle Validation Errors
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationException(
-            org.springframework.web.bind.MethodArgumentNotValidException ex) {
+            MethodArgumentNotValidException ex) {
 
         Map<String, String> errors = new HashMap<>();
 
@@ -37,6 +39,17 @@ public class GlobalExceptionHandler {
                 ApiResponse.failure(400, "Validation Failed", errors);
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    // 🔥 IMPORTANT: Handle Access Denied (Security)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
+            AccessDeniedException ex) {
+
+        ApiResponse<Object> response =
+                ApiResponse.failure(403, "Access Denied", null);
+
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
     // Handle All Other Exceptions

@@ -1,20 +1,16 @@
 package com.rev.revworkforcep2.service.user.impl;
 
-import com.rev.revworkforcep2.dto.request.user.CreateUserRequest;
-import com.rev.revworkforcep2.dto.request.user.UpdateUserRequest;
+import com.rev.revworkforcep2.dto.request.user.*;
 import com.rev.revworkforcep2.dto.response.user.UserResponse;
 import com.rev.revworkforcep2.exception.BusinessValidationException;
 import com.rev.revworkforcep2.exception.ResourceNotFoundException;
 import com.rev.revworkforcep2.mapper.user.UserMapper;
-import com.rev.revworkforcep2.model.Department;
-import com.rev.revworkforcep2.model.Designation;
-import com.rev.revworkforcep2.model.Role;
-import com.rev.revworkforcep2.model.User;
-import com.rev.revworkforcep2.repository.DepartmentRepository;
-import com.rev.revworkforcep2.repository.DesignationRepository;
-import com.rev.revworkforcep2.repository.UserRepository;
+import com.rev.revworkforcep2.model.*;
+import com.rev.revworkforcep2.repository.*;
 import com.rev.revworkforcep2.service.user.UserService;
+import com.rev.revworkforcep2.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,13 +27,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse createUser(CreateUserRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail()))
             throw new BusinessValidationException("Email already exists");
-        }
 
-        if (userRepository.existsByEmployeeId(request.getEmployeeId())) {
+        if (userRepository.existsByEmployeeId(request.getEmployeeId()))
             throw new BusinessValidationException("Employee ID already exists");
-        }
 
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
@@ -46,30 +40,25 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Designation not found"));
 
         User manager = null;
-        if (request.getManagerId() != null) {
 
+        if (request.getManagerId() != null) {
             manager = userRepository.findById(request.getManagerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
 
-            if (!manager.isActive()) {
+            if (!manager.isActive())
                 throw new BusinessValidationException("Cannot assign inactive manager");
-            }
 
-            if (!manager.getRole().equals(Role.MANAGER)) {
+            if (!manager.getRole().equals(Role.MANAGER))
                 throw new BusinessValidationException("Assigned user is not a manager");
-            }
         }
 
         User user = userMapper.toEntity(request);
-
         user.setDepartment(department);
         user.setDesignation(designation);
         user.setManager(manager);
         user.setActive(true);
 
-        User savedUser = userRepository.save(user);
-
-        return userMapper.toResponse(savedUser);
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Override
@@ -85,13 +74,10 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Designation not found"));
 
         userMapper.updateEntityFromRequest(request, user);
-
         user.setDepartment(department);
         user.setDesignation(designation);
 
-        User updatedUser = userRepository.save(user);
-
-        return userMapper.toResponse(updatedUser);
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Override
@@ -103,52 +89,27 @@ public class UserServiceImpl implements UserService {
         User manager = userRepository.findById(managerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
 
-        if (user.getId().equals(manager.getId())) {
-            throw new BusinessValidationException("User cannot be assigned as their own manager");
-        }
+        if (user.getId().equals(manager.getId()))
+            throw new BusinessValidationException("User cannot be own manager");
 
-        if (!manager.isActive()) {
-            throw new BusinessValidationException("Cannot assign inactive manager");
-        }
+        if (!manager.isActive())
+            throw new BusinessValidationException("Inactive manager cannot be assigned");
 
-        if (!manager.getRole().equals(Role.MANAGER)) {
-            throw new BusinessValidationException("Assigned user is not a manager");
-        }
+        if (!manager.getRole().equals(Role.MANAGER))
+            throw new BusinessValidationException("User is not a manager");
 
         user.setManager(manager);
 
-        User updatedUser = userRepository.save(user);
-
-        return userMapper.toResponse(updatedUser);
-    }
-
-    @Override
-    public UserResponse getUserById(Long id) {
-
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        return userMapper.toResponse(user);
-    }
-
-    @Override
-    public List<UserResponse> getAllUsers() {
-
-        return userRepository.findAll()
-                .stream()
-                .map(userMapper::toResponse)
-                .toList();
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Override
     public void deactivateUser(Long id) {
-
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!user.isActive()) {
-            throw new BusinessValidationException("User is already inactive");
-        }
+        if (!user.isActive())
+            throw new BusinessValidationException("User already inactive");
 
         user.setActive(false);
         userRepository.save(user);
@@ -156,16 +117,71 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void reactivateUser(Long id) {
-
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (user.isActive()) {
-            throw new BusinessValidationException("User is already active");
-        }
+        if (user.isActive())
+            throw new BusinessValidationException("User already active");
 
         user.setActive(true);
         userRepository.save(user);
     }
-}
 
+    @Override
+    public UserResponse updateUserStatus(UpdateUserStatusRequest request) {
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setActive(request.isActive());
+
+        return userMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public List<UserResponse> getUsersByDepartment(Long departmentId) {
+        return userRepository.findByDepartmentIdAndActiveTrue(departmentId)
+                .stream()
+                .map(userMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<UserResponse> getUsersByManager(Long managerId) {
+        return userRepository.findByManagerIdAndActiveTrue(managerId)
+                .stream()
+                .map(userMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<UserResponse> filterUsers(Long departmentId,
+                                          Long designationId,
+                                          Boolean active,
+                                          String role) {
+
+        Specification<User> spec =
+                UserSpecification.filterUsers(departmentId, designationId, active, role);
+
+        return userRepository.findAll(spec)
+                .stream()
+                .map(userMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public UserResponse getUserById(Long id) {
+        return userMapper.toResponse(
+                userRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found"))
+        );
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(userMapper::toResponse)
+                .toList();
+    }
+}

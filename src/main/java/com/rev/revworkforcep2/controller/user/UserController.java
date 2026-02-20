@@ -1,34 +1,105 @@
 package com.rev.revworkforcep2.controller.user;
 
+import com.rev.revworkforcep2.dto.request.user.*;
 import com.rev.revworkforcep2.dto.response.user.UserResponse;
+import com.rev.revworkforcep2.service.user.UserService;
 import com.rev.revworkforcep2.util.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    /*Admin Only Example
+    private final UserService userService;
+
+    // =========================
+    // ADMIN OPERATIONS
+    // =========================
+
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/create")
-    public ApiResponse<UserResponse> createUser(...) {
+    @PostMapping
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
+            @RequestBody CreateUserRequest request) {
 
-    // Manager Only Example
-    @PreAuthorize("hasRole('MANAGER')")
-    @GetMapping("/team")
-    public ApiResponse<List<UserResponse>> getTeamMembers() {
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "User created",
+                        userService.createUser(request))
+        );
+    }
 
-    // Employee Access (Self + higher roles)
-    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
-    @GetMapping("/profile")
-    public ApiResponse<UserResponse> getProfile() {}
-    */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable Long id,
+            @RequestBody UpdateUserRequest request) {
 
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "User updated",
+                        userService.updateUser(id, request))
+        );
+    }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<ApiResponse<String>> deactivateUser(@PathVariable Long id) {
+        userService.deactivateUser(id);
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "User deactivated", null)
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/reactivate")
+    public ResponseEntity<ApiResponse<String>> reactivateUser(@PathVariable Long id) {
+        userService.reactivateUser(id);
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "User reactivated", null)
+        );
+    }
+
+    // =========================
+    // VIEW OPERATIONS
+    // =========================
+
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @GetMapping("/department/{departmentId}")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsersByDepartment(
+            @PathVariable Long departmentId) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Users fetched",
+                        userService.getUsersByDepartment(departmentId))
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @GetMapping("/manager/{managerId}")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsersByManager(
+            @PathVariable Long managerId) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Users fetched",
+                        userService.getUsersByManager(managerId))
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/filter")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> filterUsers(
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long designationId,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) String role) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Filtered users",
+                        userService.filterUsers(departmentId, designationId, active, role))
+        );
+    }
 }
