@@ -1,4 +1,7 @@
 package com.rev.revworkforcep2.model;
 
-public class GoalStatus {
+public enum GoalStatus {
+    NOT_STARTED,
+    IN_PROGRESS,
+    COMPLETED
 }

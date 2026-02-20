@@ -1,53 +1,49 @@
-package com.revworkforcep2.service.performance;
+package com.rev.revworkforcep2.service.performance.impl;
 
-import com.rev.revworkforcep2.dto.request.performance.CreateReviewRequest;
+import com.rev.revworkforcep2.dto.request.performance.*;
 import com.rev.revworkforcep2.dto.response.performance.PerformanceReviewResponse;
-import com.rev.revworkforcep2.model.PerformanceReview;
-import com.rev.revworkforcep2.repository.PerformanceReviewRepository;
+import com.rev.revworkforcep2.exception.ResourceNotFoundException;
+import com.rev.revworkforcep2.mapper.performance.PerformanceMapper;
+import com.rev.revworkforcep2.model.*;
+import com.rev.revworkforcep2.repository.*;
 import com.rev.revworkforcep2.service.performance.PerformanceReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.revworkforcep2.repository.*;
-import com.revworkforce.dto.performance.*;
-import com.revworkforce.entity.*;
-import com.revworkforce.entity.enums.*;
-import com.revworkforce.mapper.performance.PerformanceMapper;
-import com.revworkforce.exception.ResourceNotFoundException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PerformanceReviewServiceImpl implements PerformanceReviewService {
 
     private final PerformanceReviewRepository reviewRepository;
-    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
     private final PerformanceMapper performanceMapper;
 
     @Override
     public PerformanceReviewResponse createReview(CreateReviewRequest request) {
 
-        Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+        User employee = userRepository.findById(request.getEmployeeId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Employee not found"));
 
-        PerformanceReview review = performanceMapper.toReview(request);
-
-        review.setEmployee(employee);
+        PerformanceReview review = performanceMapper.toReviewEntity(request);
+        review.setUser(employee);
         review.setStatus(ReviewStatus.DRAFT);
-        review.setManagerFeedback(null);
-        review.setManagerRating(null);
 
-        PerformanceReview saved = reviewRepository.save(review);
+        PerformanceReview savedReview = reviewRepository.save(review);
 
-        return performanceMapper.toReviewResponse(saved);
+        return performanceMapper.toReviewResponse(savedReview);
     }
+
+
+
 
     @Override
     public PerformanceReviewResponse getReviewById(Long id) {
-
         PerformanceReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Review not found"));
 
         return performanceMapper.toReviewResponse(review);
     }
@@ -55,19 +51,69 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     @Override
     public List<PerformanceReviewResponse> getReviewsByEmployee(Long employeeId) {
 
-        List<PerformanceReview> reviews = reviewRepository.findByEmployeeId(employeeId);
+        userRepository.findById(employeeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Employee not found"));
 
-        return reviews.stream()
+        return reviewRepository.findByUserId(employeeId)
+
+                .stream()
                 .map(performanceMapper::toReviewResponse)
-                .collect(Collectors.toList());
+                .toList();
+    }
+
+    @Override
+    public List<PerformanceReviewResponse> getAllReviews() {
+        return reviewRepository.findAll()
+                .stream()
+                .map(performanceMapper::toReviewResponse)
+                .toList();
     }
 
     @Override
     public void deleteReview(Long id) {
-
         PerformanceReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Review not found"));
 
         reviewRepository.delete(review);
     }
+    @Override
+    public PerformanceReviewResponse submitReview(Long reviewId) {
+
+        PerformanceReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Review not found"));
+
+        if (review.getStatus() != ReviewStatus.DRAFT) {
+            throw new IllegalStateException("Only draft reviews can be submitted");
+        }
+
+        review.setStatus(ReviewStatus.SUBMITTED);
+
+        PerformanceReview savedReview = reviewRepository.save(review);
+
+        return performanceMapper.toReviewResponse(savedReview);
+    }
+    @Override
+    public PerformanceReviewResponse provideFeedback(Long reviewId, String feedback, Integer rating) {
+
+        PerformanceReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Review not found"));
+
+        if (review.getStatus() != ReviewStatus.SUBMITTED) {
+            throw new IllegalStateException("Only submitted reviews can be reviewed");
+        }
+
+        review.setManagerFeedback(feedback);
+        review.setManagerRating(rating);
+        review.setStatus(ReviewStatus.REVIEWED);
+
+        PerformanceReview savedReview = reviewRepository.save(review);
+
+        return performanceMapper.toReviewResponse(savedReview);
+    }
+
+
 }

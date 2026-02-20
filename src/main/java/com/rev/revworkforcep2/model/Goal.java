@@ -7,25 +7,25 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "goals")
 @Getter
 @Setter
-@NoArgsConstructor
-public class Goal extends BaseEntity {
+@Entity
+public class Goal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(nullable = false)
+    private String title;
     private String description;
 
-    private LocalDate deadline;
-    private String priority;
-    private int progressPercentage;
+    private Integer progress;
+
+    @Enumerated(EnumType.STRING)
+    private GoalStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }
+
