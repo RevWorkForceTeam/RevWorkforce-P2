@@ -1,4 +1,4 @@
 package com.rev.revworkforcep2.dto.request.performance;
 
-public class CretaeGlobalRequest {
+public class CreateGlobalRequest {
 }
