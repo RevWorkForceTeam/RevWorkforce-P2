@@ -35,13 +35,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markAsRead(Long id) {
-
         Notification notification = repository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Notification not found"));
 
         notification.setReadStatus(true);
-        repository.save(notification);
     }
 
     @Override
@@ -75,4 +73,3 @@ public class NotificationServiceImpl implements NotificationService {
         repository.save(notification);
     }
 }
-

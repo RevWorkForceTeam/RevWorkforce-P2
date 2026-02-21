@@ -21,4 +21,3 @@ public class MarkNotificationRequest {
         this.notificationId = notificationId;
     }
 }
-
