@@ -1,9 +1,9 @@
 package com.rev.revworkforcep2.controller.performance;
 
-import com.rev.revworkforcep2.dto.request.performance.CreateGoalRequest;
-import com.rev.revworkforcep2.dto.request.performance.CreateReviewRequest;
+import com.rev.revworkforcep2.dto.request.performance.*;
 import com.rev.revworkforcep2.dto.response.performance.GoalResponse;
 import com.rev.revworkforcep2.dto.response.performance.PerformanceReviewResponse;
+import com.rev.revworkforcep2.dto.response.performance.TeamPerformanceSummaryResponse;
 import com.rev.revworkforcep2.service.performance.GoalService;
 import com.rev.revworkforcep2.service.performance.PerformanceReviewService;
 import com.rev.revworkforcep2.util.ApiResponse;
@@ -13,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/performance")
 @RequiredArgsConstructor
@@ -38,17 +37,16 @@ public class PerformanceController {
         );
     }
 
-
-    @PutMapping("/reviews/{id}/submit")
+    @PutMapping("/reviews/submit")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<ApiResponse<PerformanceReviewResponse>> submitReview(
-            @PathVariable Long id) {
+            @RequestBody SubmitPerformanceReviewRequest request) {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
                         200,
                         "Review submitted successfully",
-                        reviewService.submitReview(id)
+                        reviewService.submitReview(request)
                 )
         );
     }
@@ -57,14 +55,41 @@ public class PerformanceController {
     @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<PerformanceReviewResponse>> provideFeedback(
             @PathVariable Long id,
-            @RequestParam String feedback,
-            @RequestParam Integer rating) {
+            @RequestBody ProvidedFeedbackRequest request) {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
                         200,
                         "Feedback provided successfully",
-                        reviewService.provideFeedback(id, feedback, rating)
+                        reviewService.provideFeedback(id, request)
+                )
+        );
+    }
+
+    @PostMapping("/reviews/manual")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<ApiResponse<PerformanceReviewResponse>> createPerformanceReview(
+            @RequestBody CreatePerformanceReviewRequest request) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Performance review created successfully",
+                        reviewService.createPerformanceReview(request)
+                )
+        );
+    }
+
+    @PostMapping("/reviews/team-summary")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<TeamPerformanceSummaryResponse>> getTeamSummary(
+            @RequestBody CreateGlobalRequest request) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Team performance summary fetched successfully",
+                        reviewService.getTeamPerformanceSummary(request)
                 )
         );
     }
@@ -126,11 +151,11 @@ public class PerformanceController {
         );
     }
 
-
     // ================= GOAL APIs =================
 
+    // ✅ UPDATED HERE
     @PostMapping("/goals")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public ResponseEntity<ApiResponse<GoalResponse>> createGoal(
             @RequestBody CreateGoalRequest request) {
 
@@ -143,17 +168,17 @@ public class PerformanceController {
         );
     }
 
-    @PutMapping("/goals/{id}/progress")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    // ✅ UPDATED HERE
+    @PutMapping("/goals/progress")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public ResponseEntity<ApiResponse<GoalResponse>> updateGoalProgress(
-            @PathVariable Long id,
-            @RequestParam Integer progress) {
+            @RequestBody UpdateGoalProgressRequest request) {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
                         200,
                         "Goal progress updated successfully",
-                        goalService.updateGoalProgress(id, progress)
+                        goalService.updateGoalProgress(request)
                 )
         );
     }
@@ -185,3 +210,4 @@ public class PerformanceController {
         );
     }
 }
+

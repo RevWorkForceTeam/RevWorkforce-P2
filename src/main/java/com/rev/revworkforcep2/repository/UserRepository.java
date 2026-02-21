@@ -20,4 +20,7 @@ public interface UserRepository extends
     List<User> findByDepartmentIdAndActiveTrue(Long departmentId);
 
     List<User> findByManagerIdAndActiveTrue(Long managerId);
+
+    // change made by chaithanya
+    List<User> findByManagerId(Long managerId);
 }
