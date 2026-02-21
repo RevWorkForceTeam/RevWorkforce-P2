@@ -1,5 +1,4 @@
 package com.rev.revworkforcep2.dto.request.performance;
-
 import lombok.Data;
 
 @Data
@@ -17,3 +16,4 @@ public class CreatePerformanceReviewRequest {
 
     private Integer selfRating;   // Must be between 1 and 5
 }
+
