@@ -1,7 +1,9 @@
 package com.rev.revworkforcep2.service.performance.impl;
 
 import com.rev.revworkforcep2.dto.request.performance.CreateGoalRequest;
+import com.rev.revworkforcep2.dto.request.performance.UpdateGoalProgressRequest;
 import com.rev.revworkforcep2.dto.response.performance.GoalResponse;
+import com.rev.revworkforcep2.exception.InvalidRequestException;
 import com.rev.revworkforcep2.exception.ResourceNotFoundException;
 import com.rev.revworkforcep2.mapper.performance.PerformanceMapper;
 import com.rev.revworkforcep2.model.Goal;
@@ -88,19 +90,54 @@ public class GoalServiceImpl implements GoalService {
     }
 
     // ================= UPDATE PROGRESS =================
+//    @Override
+//    public GoalResponse updateGoalProgress(Long goalId, Integer progress) {
+//
+//        Goal goal = goalRepository.findById(goalId)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException("Goal not found"));
+//
+//        goal.setProgress(progress);
+//
+//        if (progress != null && progress == 100) {
+//            goal.setStatus(GoalStatus.COMPLETED);
+//        } else {
+//            goal.setStatus(GoalStatus.IN_PROGRESS);
+//        }
+//
+//        Goal savedGoal = goalRepository.save(goal);
+//
+//        return performanceMapper.toGoalResponse(savedGoal);
+//    }
     @Override
-    public GoalResponse updateGoalProgress(Long goalId, Integer progress) {
+    public GoalResponse updateGoalProgress(
+            UpdateGoalProgressRequest request) {
 
-        Goal goal = goalRepository.findById(goalId)
+        if (request.getGoalId() == null) {
+            throw new InvalidRequestException("Goal ID is required");
+        }
+
+        if (request.getProgress() == null ||
+                request.getProgress() < 0 ||
+                request.getProgress() > 100) {
+
+            throw new InvalidRequestException(
+                    "Progress must be between 0 and 100");
+        }
+
+        Goal goal = goalRepository.findById(request.getGoalId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Goal not found"));
 
-        goal.setProgress(progress);
+        goal.setProgress(request.getProgress());
 
-        if (progress != null && progress == 100) {
-            goal.setStatus(GoalStatus.COMPLETED);
-        } else {
+        // Update status based on progress
+        if (request.getProgress() == 0) {
+            goal.setStatus(GoalStatus.NOT_STARTED);
+        } else if (request.getProgress() < 100) {
             goal.setStatus(GoalStatus.IN_PROGRESS);
+        } else {
+            goal.setStatus(GoalStatus.COMPLETED);
         }
 
         Goal savedGoal = goalRepository.save(goal);

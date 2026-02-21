@@ -2,6 +2,7 @@ package com.rev.revworkforcep2.service.user.impl;
 
 import com.rev.revworkforcep2.dto.request.user.*;
 import com.rev.revworkforcep2.dto.response.user.UserResponse;
+import com.rev.revworkforcep2.dto.response.user.UserSummaryResponse;
 import com.rev.revworkforcep2.exception.BusinessValidationException;
 import com.rev.revworkforcep2.exception.ResourceNotFoundException;
 import com.rev.revworkforcep2.mapper.user.UserMapper;
@@ -23,6 +24,10 @@ public class UserServiceImpl implements UserService {
     private final DepartmentRepository departmentRepository;
     private final DesignationRepository designationRepository;
     private final UserMapper userMapper;
+
+    // =====================================================
+    // CREATE USER
+    // =====================================================
 
     @Override
     public UserResponse createUser(CreateUserRequest request) {
@@ -61,6 +66,10 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    // =====================================================
+    // UPDATE USER
+    // =====================================================
+
     @Override
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
 
@@ -79,6 +88,10 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toResponse(userRepository.save(user));
     }
+
+    // =====================================================
+    // ASSIGN MANAGER
+    // =====================================================
 
     @Override
     public UserResponse assignManager(Long userId, Long managerId) {
@@ -102,6 +115,10 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toResponse(userRepository.save(user));
     }
+
+    // =====================================================
+    // ACTIVATE / DEACTIVATE
+    // =====================================================
 
     @Override
     public void deactivateUser(Long id) {
@@ -138,36 +155,52 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    // =====================================================
+    // LIST APIs (Now Using Summary DTO)
+    // =====================================================
+
     @Override
-    public List<UserResponse> getUsersByDepartment(Long departmentId) {
+    public List<UserSummaryResponse> getUsersByDepartment(Long departmentId) {
         return userRepository.findByDepartmentIdAndActiveTrue(departmentId)
                 .stream()
-                .map(userMapper::toResponse)
+                .map(userMapper::toSummaryResponse)
                 .toList();
     }
 
     @Override
-    public List<UserResponse> getUsersByManager(Long managerId) {
+    public List<UserSummaryResponse> getUsersByManager(Long managerId) {
         return userRepository.findByManagerIdAndActiveTrue(managerId)
                 .stream()
-                .map(userMapper::toResponse)
+                .map(userMapper::toSummaryResponse)
                 .toList();
     }
 
     @Override
-    public List<UserResponse> filterUsers(Long departmentId,
-                                          Long designationId,
-                                          Boolean active,
-                                          String role) {
+    public List<UserSummaryResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(userMapper::toSummaryResponse)
+                .toList();
+    }
+
+    @Override
+    public List<UserSummaryResponse> filterUsers(Long departmentId,
+                                                 Long designationId,
+                                                 Boolean active,
+                                                 String role) {
 
         Specification<User> spec =
                 UserSpecification.filterUsers(departmentId, designationId, active, role);
 
         return userRepository.findAll(spec)
                 .stream()
-                .map(userMapper::toResponse)
+                .map(userMapper::toSummaryResponse)
                 .toList();
     }
+
+    // =====================================================
+    // SINGLE USER (FULL RESPONSE)
+    // =====================================================
 
     @Override
     public UserResponse getUserById(Long id) {
@@ -175,13 +208,5 @@ public class UserServiceImpl implements UserService {
                 userRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"))
         );
-    }
-
-    @Override
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(userMapper::toResponse)
-                .toList();
     }
 }
