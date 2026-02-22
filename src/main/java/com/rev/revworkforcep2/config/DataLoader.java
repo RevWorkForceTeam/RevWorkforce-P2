@@ -1,12 +1,7 @@
 package com.rev.revworkforcep2.config;
 
-import com.rev.revworkforcep2.model.Department;
-import com.rev.revworkforcep2.model.Designation;
-import com.rev.revworkforcep2.model.Role;
-import com.rev.revworkforcep2.model.User;
-import com.rev.revworkforcep2.repository.DepartmentRepository;
-import com.rev.revworkforcep2.repository.DesignationRepository;
-import com.rev.revworkforcep2.repository.UserRepository;
+import com.rev.revworkforcep2.model.*;
+import com.rev.revworkforcep2.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -61,7 +56,7 @@ public class DataLoader {
                     });
 
             // =====================
-            // CREATE ADMIN USER IF NOT EXISTS
+            // CREATE ADMIN
             // =====================
             if (!userRepository.existsByEmail("admin@gmail.com")) {
 
@@ -75,17 +70,33 @@ public class DataLoader {
                 admin.setActive(true);
                 admin.setDepartment(hr);
                 admin.setDesignation(managerDesignation);
-                admin.setPhone("9999999999");
-                admin.setAddress("Head Office");
-                admin.setEmergencyContact("8888888888");
-                admin.setSalary(100000.0);
                 admin.setJoiningDate(LocalDate.now());
 
                 userRepository.save(admin);
             }
 
             // =====================
-            // CREATE EMPLOYEE USER IF NOT EXISTS
+            // CREATE MANAGER
+            // =====================
+            if (!userRepository.existsByEmail("manager@gmail.com")) {
+
+                User manager = new User();
+                manager.setEmployeeId("EMP003");
+                manager.setFirstName("Team");
+                manager.setLastName("Manager");
+                manager.setEmail("manager@gmail.com");
+                manager.setPassword(passwordEncoder.encode("admin123"));
+                manager.setRole(Role.MANAGER);
+                manager.setActive(true);
+                manager.setDepartment(hr);
+                manager.setDesignation(managerDesignation);
+                manager.setJoiningDate(LocalDate.now());
+
+                userRepository.save(manager);
+            }
+
+            // =====================
+            // CREATE EMPLOYEE
             // =====================
             if (!userRepository.existsByEmail("employee@gmail.com")) {
 
@@ -99,13 +110,23 @@ public class DataLoader {
                 employee.setActive(true);
                 employee.setDepartment(hr);
                 employee.setDesignation(employeeDesignation);
-                employee.setPhone("7777777777");
-                employee.setAddress("Chennai");
-                employee.setEmergencyContact("6666666666");
-                employee.setSalary(50000.0);
                 employee.setJoiningDate(LocalDate.now());
 
                 userRepository.save(employee);
+            }
+
+            // =====================
+            // ASSIGN MANAGER TO EMPLOYEE
+            // =====================
+            User managerUser = userRepository.findByEmail("manager@gmail.com")
+                    .orElseThrow(() -> new RuntimeException("Manager not found"));
+
+            User employeeUser = userRepository.findByEmail("employee@gmail.com")
+                    .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+            if (employeeUser.getManager() == null) {
+                employeeUser.setManager(managerUser);
+                userRepository.save(employeeUser);
             }
 
             System.out.println("✅ Data verification completed successfully!");

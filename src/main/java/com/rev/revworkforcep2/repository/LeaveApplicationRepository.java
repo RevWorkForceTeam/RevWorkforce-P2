@@ -10,7 +10,8 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
 
     List<LeaveApplication> findByUserId(Long userId);
 
-    List<LeaveApplication> findByStatus(LeaveStatus status);
-
-    List<LeaveApplication> findByUserManagerId(Long managerId);
+//change bby suji
+    List<LeaveApplication> findByUserManagerIdAndStatus(
+            Long managerId,
+            LeaveStatus status);
 }
