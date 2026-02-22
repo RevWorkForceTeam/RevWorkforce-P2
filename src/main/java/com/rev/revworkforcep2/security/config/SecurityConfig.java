@@ -1,64 +1,60 @@
 package com.rev.revworkforcep2.security.config;
 
 import com.rev.revworkforcep2.security.jwt.JwtAuthenticationFilter;
-import com.rev.revworkforcep2.security.service.CustomUserDetailsService;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomUserDetailsService userDetailsService;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.userDetailsService = userDetailsService;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
+                // Disable CSRF
                 .csrf(csrf -> csrf.disable())
+
+                // Disable form login
+                .formLogin(form -> form.disable())
+
+                // 🔥 IMPORTANT: Disable HTTP Basic
+                .httpBasic(httpBasic -> httpBasic.disable())
+
+                // Stateless session
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authorizeHttpRequests(auth -> auth
 
-                        // Public endpoints
+                // Authorization rules
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**"
                         ).permitAll()
-
-                        // Admin only
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
-
-                        // Manager only
-                        .requestMatchers("/api/manager/**")
-                        .hasRole("MANAGER")
-
-                        // Employee endpoints
-                        .requestMatchers("/api/employee/**")
-                        .hasAnyRole("EMPLOYEE", "MANAGER", "ADMIN")
-
-                        // Everything else authenticated
                         .anyRequest().authenticated()
                 )
 
+                // Add JWT filter
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
 

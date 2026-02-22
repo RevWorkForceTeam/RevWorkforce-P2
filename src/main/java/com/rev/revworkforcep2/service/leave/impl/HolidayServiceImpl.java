@@ -69,4 +69,5 @@ public class HolidayServiceImpl implements HolidayService {
 
         holidayRepository.delete(entity);
     }
+
 }

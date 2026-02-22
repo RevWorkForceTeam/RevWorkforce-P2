@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -17,15 +18,16 @@ public class DataLoader {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final DesignationRepository designationRepository;
+    private final LeaveTypeRepository leaveTypeRepository;
+    private final LeaveBalanceRepository leaveBalanceRepository;
+    private final HolidayRepository holidayRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
     CommandLineRunner loadData() {
         return args -> {
 
-            // =====================
-            // CREATE OR GET DEPARTMENT
-            // =====================
+            // ===================== DEPARTMENT =====================
             Department hr = departmentRepository.findByName("HR")
                     .orElseGet(() -> {
                         Department dept = new Department();
@@ -34,9 +36,7 @@ public class DataLoader {
                         return departmentRepository.save(dept);
                     });
 
-            // =====================
-            // CREATE OR GET DESIGNATIONS
-            // =====================
+            // ===================== DESIGNATIONS =====================
             Designation managerDesignation = designationRepository
                     .findByTitle("Manager")
                     .orElseGet(() -> {
@@ -55,81 +55,123 @@ public class DataLoader {
                         return designationRepository.save(d);
                     });
 
-            // =====================
-            // CREATE ADMIN
-            // =====================
-            if (!userRepository.existsByEmail("admin@gmail.com")) {
+            // ===================== USERS =====================
+            User admin = createUserIfNotExists(
+                    "admin@gmail.com", "EMP001",
+                    "System", "Admin",
+                    Role.ADMIN, hr, managerDesignation
+            );
 
-                User admin = new User();
-                admin.setEmployeeId("EMP001");
-                admin.setFirstName("System");
-                admin.setLastName("Admin");
-                admin.setEmail("admin@gmail.com");
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setRole(Role.ADMIN);
-                admin.setActive(true);
-                admin.setDepartment(hr);
-                admin.setDesignation(managerDesignation);
-                admin.setJoiningDate(LocalDate.now());
+            User manager = createUserIfNotExists(
+                    "manager@gmail.com", "EMP003",
+                    "Team", "Manager",
+                    Role.MANAGER, hr, managerDesignation
+            );
 
-                userRepository.save(admin);
-            }
+            User employee = createUserIfNotExists(
+                    "employee@gmail.com", "EMP002",
+                    "John", "Doe",
+                    Role.EMPLOYEE, hr, employeeDesignation
+            );
 
-            // =====================
-            // CREATE MANAGER
-            // =====================
-            if (!userRepository.existsByEmail("manager@gmail.com")) {
-
-                User manager = new User();
-                manager.setEmployeeId("EMP003");
-                manager.setFirstName("Team");
-                manager.setLastName("Manager");
-                manager.setEmail("manager@gmail.com");
-                manager.setPassword(passwordEncoder.encode("admin123"));
-                manager.setRole(Role.MANAGER);
-                manager.setActive(true);
-                manager.setDepartment(hr);
-                manager.setDesignation(managerDesignation);
-                manager.setJoiningDate(LocalDate.now());
-
-                userRepository.save(manager);
-            }
-
-            // =====================
-            // CREATE EMPLOYEE
-            // =====================
-            if (!userRepository.existsByEmail("employee@gmail.com")) {
-
-                User employee = new User();
-                employee.setEmployeeId("EMP002");
-                employee.setFirstName("John");
-                employee.setLastName("Doe");
-                employee.setEmail("employee@gmail.com");
-                employee.setPassword(passwordEncoder.encode("admin123"));
-                employee.setRole(Role.EMPLOYEE);
-                employee.setActive(true);
-                employee.setDepartment(hr);
-                employee.setDesignation(employeeDesignation);
-                employee.setJoiningDate(LocalDate.now());
-
+            // Assign Manager
+            if (employee.getManager() == null) {
+                employee.setManager(manager);
                 userRepository.save(employee);
             }
 
-            // =====================
-            // ASSIGN MANAGER TO EMPLOYEE
-            // =====================
-            User managerUser = userRepository.findByEmail("manager@gmail.com")
-                    .orElseThrow(() -> new RuntimeException("Manager not found"));
+            // ===================== LEAVE TYPES =====================
+            LeaveType casual = createLeaveTypeIfNotExists("Casual Leave", 12);
+            LeaveType sick = createLeaveTypeIfNotExists("Sick Leave", 10);
+            LeaveType paid = createLeaveTypeIfNotExists("Paid Leave", 15);
 
-            User employeeUser = userRepository.findByEmail("employee@gmail.com")
-                    .orElseThrow(() -> new RuntimeException("Employee not found"));
+            // ===================== LEAVE BALANCES =====================
+            List<User> users = List.of(admin, manager, employee);
+            List<LeaveType> leaveTypes = List.of(casual, sick, paid);
 
-            if (employeeUser.getManager() == null) {
-                employeeUser.setManager(managerUser);
-                userRepository.save(employeeUser);
+            for (User u : users) {
+
+                if (leaveBalanceRepository.findByUserId(u.getId()).isEmpty()) {
+
+                    for (LeaveType lt : leaveTypes) {
+
+                        LeaveBalance balance = new LeaveBalance();
+                        balance.setUser(u);
+                        balance.setLeaveType(lt);
+                        balance.setTotalDays(lt.getDefaultQuota());
+                        balance.setUsedDays(0);
+                        balance.setRemainingDays(lt.getDefaultQuota());
+
+                        leaveBalanceRepository.save(balance);
+                    }
+                }
             }
 
-            System.out.println("✅ Data verification completed successfully!");
+            // ===================== HOLIDAYS =====================
+            if (holidayRepository.count() == 0) {
+
+                Holiday h1 = new Holiday();
+                h1.setName("New Year");
+                h1.setHolidayDate(LocalDate.of(2026, 1, 1));
+
+                Holiday h2 = new Holiday();
+                h2.setName("Republic Day");
+                h2.setHolidayDate(LocalDate.of(2026, 1, 26));
+
+                Holiday h3 = new Holiday();
+                h3.setName("Independence Day");
+                h3.setHolidayDate(LocalDate.of(2026, 8, 15));
+
+                Holiday h4 = new Holiday();
+                h4.setName("Gandhi Jayanti");
+                h4.setHolidayDate(LocalDate.of(2026, 10, 2));
+
+                Holiday h5 = new Holiday();
+                h5.setName("Christmas");
+                h5.setHolidayDate(LocalDate.of(2026, 12, 25));
+
+                holidayRepository.saveAll(List.of(h1, h2, h3, h4, h5));
+            }
+
+            System.out.println("✅ Default data loaded successfully!");
         };
+    }
+
+    // ===================== HELPER METHODS =====================
+
+    private User createUserIfNotExists(
+            String email,
+            String empId,
+            String first,
+            String last,
+            Role role,
+            Department dept,
+            Designation desig
+    ) {
+        return userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    User u = new User();
+                    u.setEmployeeId(empId);
+                    u.setFirstName(first);
+                    u.setLastName(last);
+                    u.setEmail(email);
+                    u.setPassword(passwordEncoder.encode("admin123"));
+                    u.setRole(role);
+                    u.setActive(true);
+                    u.setDepartment(dept);
+                    u.setDesignation(desig);
+                    u.setJoiningDate(LocalDate.now());
+                    return userRepository.save(u);
+                });
+    }
+
+    private LeaveType createLeaveTypeIfNotExists(String name, int quota) {
+        return leaveTypeRepository.findByName(name)
+                .orElseGet(() -> {
+                    LeaveType lt = new LeaveType();
+                    lt.setName(name);
+                    lt.setDefaultQuota(quota);
+                    return leaveTypeRepository.save(lt);
+                });
     }
 }

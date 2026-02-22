@@ -17,4 +17,5 @@ public interface HolidayService {
     List<HolidayResponse> getAllHolidays();
 
     void deleteHoliday(Long id);
+
 }

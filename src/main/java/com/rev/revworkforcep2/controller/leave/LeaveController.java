@@ -251,7 +251,6 @@
 //    }
 //}
 
-
 package com.rev.revworkforcep2.controller.leave;
 
 import com.rev.revworkforcep2.dto.request.leave.*;
@@ -334,7 +333,7 @@ public class LeaveController {
     // =========================================================
 
     @GetMapping("/balance/me")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     public ResponseEntity<ApiResponse<List<LeaveBalanceResponse>>> getMyBalances() {
 
         return ResponseEntity.ok(
@@ -383,12 +382,25 @@ public class LeaveController {
         );
     }
 
+    @DeleteMapping("/holidays/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteHoliday(@PathVariable Long id) {
+
+        holidayService.deleteHoliday(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200,
+                        "Holiday deleted successfully",
+                        null)
+        );
+    }
+
     // =========================================================
     // 🔹 LEAVE APPLICATION
     // =========================================================
 
     @PostMapping
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     public ResponseEntity<ApiResponse<LeaveApplicationResponse>> applyLeave(
             @Valid @RequestBody ApplyLeaveRequest request) {
 
@@ -400,7 +412,7 @@ public class LeaveController {
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ResponseEntity<ApiResponse<LeaveApplicationResponse>> approveLeave(
             @PathVariable Long id) {
 
@@ -412,7 +424,7 @@ public class LeaveController {
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ResponseEntity<ApiResponse<LeaveApplicationResponse>> rejectLeave(
             @PathVariable Long id,
             @RequestParam String comment) {
@@ -425,7 +437,7 @@ public class LeaveController {
     }
 
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     public ResponseEntity<ApiResponse<LeaveApplicationResponse>> cancelLeave(
             @PathVariable Long id) {
 
@@ -441,7 +453,7 @@ public class LeaveController {
     // =========================================================
 
     @GetMapping("/me")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
     public ResponseEntity<ApiResponse<List<LeaveApplicationResponse>>> getMyLeaves() {
 
         return ResponseEntity.ok(
@@ -461,6 +473,16 @@ public class LeaveController {
                         leaveApplicationService.getPendingLeavesForManager())
         );
     }
+    @GetMapping("/team-calendar")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
+    public ResponseEntity<ApiResponse<List<TeamLeaveCalenderResponse>>> getTeamCalendar() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Team calendar fetched successfully",
+                        leaveApplicationService.getTeamCalendar()
+                )
+        );
+    }
 }
-
-
