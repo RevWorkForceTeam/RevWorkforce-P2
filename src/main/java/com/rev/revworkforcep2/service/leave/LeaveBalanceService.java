@@ -6,10 +6,18 @@ import java.util.List;
 
 public interface LeaveBalanceService {
 
-    LeaveBalanceResponse createBalance(Long employeeId, Long leaveTypeId, int totalQuota);
+    LeaveBalanceResponse createBalance(Long employeeId,
+                                       Long leaveTypeId,
+                                       int totalQuota);
 
-    LeaveBalanceResponse getBalance(Long employeeId, Long leaveTypeId);
+    LeaveBalanceResponse getBalance(Long employeeId,
+                                    Long leaveTypeId);
 
     List<LeaveBalanceResponse> getEmployeeBalances(Long employeeId);
-    void deductLeave(Long employeeId, Long leaveTypeId, int days);
+
+    List<LeaveBalanceResponse> getMyBalances();   // 🔥 For logged-in user
+
+    void deductLeave(Long employeeId,
+                     Long leaveTypeId,
+                     int days);
 }

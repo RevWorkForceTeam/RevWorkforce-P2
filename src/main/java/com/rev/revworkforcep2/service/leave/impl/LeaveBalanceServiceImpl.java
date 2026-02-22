@@ -9,6 +9,7 @@ import com.rev.revworkforcep2.model.User;
 import com.rev.revworkforcep2.repository.LeaveBalanceRepository;
 import com.rev.revworkforcep2.repository.LeaveTypeRepository;
 import com.rev.revworkforcep2.repository.UserRepository;
+import com.rev.revworkforcep2.security.util.SecurityUtils;
 import com.rev.revworkforcep2.service.leave.LeaveBalanceService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,17 +28,21 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
     private final UserRepository userRepository;
     private final LeaveMapper leaveMapper;
 
-    // =========================================
-    // Create initial balance
-    // =========================================
+    // =========================================================
+    // Create initial balance (ADMIN)
+    // =========================================================
     @Override
-    public LeaveBalanceResponse createBalance(Long employeeId, Long leaveTypeId, int totalQuota) {
+    public LeaveBalanceResponse createBalance(Long employeeId,
+                                              Long leaveTypeId,
+                                              int totalQuota) {
 
         User user = userRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
         LeaveType leaveType = leaveTypeRepository.findById(leaveTypeId)
-                .orElseThrow(() -> new ResourceNotFoundException("LeaveType not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Leave type not found"));
 
         LeaveBalance balance = new LeaveBalance();
         balance.setUser(user);
@@ -51,24 +56,24 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         return leaveMapper.toResponse(saved);
     }
 
-    // =========================================
-    // Get balance
-    // =========================================
+    // =========================================================
+    // Get balance for specific leave type
+    // =========================================================
     @Override
-    public LeaveBalanceResponse getBalance(Long employeeId, Long leaveTypeId) {
+    public LeaveBalanceResponse getBalance(Long employeeId,
+                                           Long leaveTypeId) {
 
         LeaveBalance balance = leaveBalanceRepository
                 .findByUserIdAndLeaveTypeId(employeeId, leaveTypeId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Leave balance not found")
-                );
+                        new ResourceNotFoundException("Leave balance not found"));
 
         return leaveMapper.toResponse(balance);
     }
 
-    // =========================================
-    // Get all balances for employee
-    // =========================================
+    // =========================================================
+    // Get all balances for specific employee
+    // =========================================================
     @Override
     public List<LeaveBalanceResponse> getEmployeeBalances(Long employeeId) {
 
@@ -83,14 +88,43 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
                 .map(leaveMapper::toResponse)
                 .toList();
     }
+
+    // =========================================================
+    // 🔥 Get balances for logged-in employee
+    // =========================================================
     @Override
-    public void deductLeave(Long employeeId, Long leaveTypeId, int days) {
+    public List<LeaveBalanceResponse> getMyBalances() {
+
+        String email = SecurityUtils.getCurrentUsername();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Logged in user not found"));
+
+        List<LeaveBalance> balances =
+                leaveBalanceRepository.findByUserId(user.getId());
+
+        if (balances.isEmpty()) {
+            throw new ResourceNotFoundException("No leave balances found");
+        }
+
+        return balances.stream()
+                .map(leaveMapper::toResponse)
+                .toList();
+    }
+
+    // =========================================================
+    // Deduct leave days
+    // =========================================================
+    @Override
+    public void deductLeave(Long employeeId,
+                            Long leaveTypeId,
+                            int days) {
 
         LeaveBalance balance = leaveBalanceRepository
                 .findByUserIdAndLeaveTypeId(employeeId, leaveTypeId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Leave balance not found")
-                );
+                        new ResourceNotFoundException("Leave balance not found"));
 
         if (balance.getRemainingDays() < days) {
             throw new IllegalArgumentException("Insufficient leave balance");
