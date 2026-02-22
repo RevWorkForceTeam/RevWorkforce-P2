@@ -39,4 +39,8 @@ public class LeaveApplication extends BaseEntity {
     private LeaveStatus status;
 
     private String managerComment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    private User manager;
 }

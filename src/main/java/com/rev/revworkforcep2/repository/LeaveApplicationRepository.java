@@ -9,8 +9,8 @@ import java.util.List;
 public interface LeaveApplicationRepository extends JpaRepository<LeaveApplication, Long> {
 
     List<LeaveApplication> findByUserId(Long userId);
-
-//change bby suji
+    List<LeaveApplication> findByUserManagerId(Long managerId);
+//change by suji
     List<LeaveApplication> findByUserManagerIdAndStatus(
             Long managerId,
             LeaveStatus status);

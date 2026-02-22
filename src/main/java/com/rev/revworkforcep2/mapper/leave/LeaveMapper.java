@@ -61,4 +61,44 @@ public interface LeaveMapper {
     @Mapping(target = "used", source = "usedDays")
     @Mapping(target = "remaining", source = "remainingDays")
     LeaveBalanceResponse toResponse(LeaveBalance entity);
+
+
+
+    // ===============================
+// Team Calendar Mapping
+// ===============================
+
+    default TeamLeaveCalenderResponse toTeamCalendar(LeaveApplication leave) {
+
+        if (leave == null) return null;
+
+        TeamLeaveCalenderResponse dto = new TeamLeaveCalenderResponse();
+
+        dto.setEmployeeId(leave.getUser().getId());
+        dto.setEmployeeName(leave.getUser().getFirstName());
+        dto.setEmployeeName(leave.getUser().getLastName());
+        dto.setStartDate(leave.getStartDate());
+        dto.setEndDate(leave.getEndDate());
+        dto.setLeaveType(leave.getLeaveType().getName());
+        dto.setStatus(leave.getStatus().name());
+
+        return dto;
+    }
+
+    default TeamLeaveCalenderResponse holidayToTeamCalendar(Holiday holiday) {
+
+        if (holiday == null) return null;
+
+        TeamLeaveCalenderResponse dto = new TeamLeaveCalenderResponse();
+
+        dto.setEmployeeId(null);
+        dto.setEmployeeName("Holiday");
+        dto.setStartDate(holiday.getHolidayDate());
+        dto.setEndDate(holiday.getHolidayDate());
+        dto.setLeaveType(holiday.getName());
+        dto.setStatus("HOLIDAY");
+
+        return dto;
+    }
+
 }
