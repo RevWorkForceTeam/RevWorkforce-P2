@@ -1,41 +1,85 @@
 package com.rev.revworkforcep2.aspect;
 
+import com.rev.revworkforcep2.logging.AppLogger;
+import com.rev.revworkforcep2.logging.LogConstants;
+import com.rev.revworkforcep2.logging.LogMessageBuilder;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
 public class LoggingAspect {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(LoggingAspect.class);
+    private static final AppLogger logger =
+            AppLogger.getLogger(LoggingAspect.class);
 
-    @Around("execution(* com.rev.revworkforcep2.service.impl.*.*(..))")
+    @SuppressWarnings("unused")
+    @Around("within(com.rev.revworkforcep2.service..*)")
     public Object logServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
 
         long startTime = System.currentTimeMillis();
 
-        String methodName = joinPoint.getSignature().toShortString();
+        String className = joinPoint.getTarget().getClass().getSimpleName();
+        String methodName = joinPoint.getSignature().getName();
+        Object[] args = joinPoint.getArgs();
 
-        logger.info("Entering method: {}", methodName);
+        // ENTRY LOG
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    LogConstants.ENTRY,
+                    className,
+                    methodName,
+                    LogMessageBuilder.buildArguments(args)
+            );
+        }
 
         try {
+
             Object result = joinPoint.proceed();
 
             long executionTime = System.currentTimeMillis() - startTime;
 
-            logger.info("Exiting method: {} | Execution time: {} ms",
-                    methodName, executionTime);
+            logger.info(
+                    LogConstants.EXIT,
+                    className,
+                    methodName,
+                    result
+            );
+
+            // EXECUTION TIME LOG
+            logger.debug(
+                    LogConstants.EXECUTION_TIME,
+                    className,
+                    methodName,
+                    executionTime
+            );
+
+            // SLOW EXECUTION WARNING
+            if (executionTime > 1000) {
+                logger.warn(
+                        LogConstants.SLOW_EXECUTION,
+                        className,
+                        methodName,
+                        executionTime
+                );
+            }
 
             return result;
 
         } catch (Exception ex) {
-            logger.error("Exception in method: {} | Message: {}",
-                    methodName, ex.getMessage());
+
+            // EXCEPTION LOG (prints full stack trace)
+            logger.error(
+                    LogConstants.EXCEPTION,
+                    className,
+                    methodName,
+                    ex.getMessage()
+            );
+
+            logger.error("Stack trace:", ex);
+
             throw ex;
         }
     }

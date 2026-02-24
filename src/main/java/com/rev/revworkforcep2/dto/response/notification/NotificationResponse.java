@@ -1,7 +1,16 @@
 package com.rev.revworkforcep2.dto.response.notification;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class NotificationResponse {
 
     private Long id;
@@ -9,22 +18,4 @@ public class NotificationResponse {
     private String type;
     private boolean readStatus;
     private LocalDateTime createdAt;
-
-    public NotificationResponse(Long id,
-                                String message,
-                                String type,
-                                boolean readStatus,
-                                LocalDateTime createdAt) {
-        this.id = id;
-        this.message = message;
-        this.type = type;
-        this.readStatus = readStatus;
-        this.createdAt = createdAt;
-    }
-
-    public Long getId() { return id; }
-    public String getMessage() { return message; }
-    public String getType() { return type; }
-    public boolean isReadStatus() { return readStatus; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
 }
