@@ -1,0 +1,43 @@
+<div class="d-flex">
+  <app-sidebar [role]="getRole()" />
+
+  <div class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Announcements</div>
+        <div class="page-breadcrumb">Home / Announcements</div>
+      </div>
+      <div class="topbar-right">
+        <a href="#" class="icon-btn"></a>
+        <div class="topbar-avatar">{{ getInitials(auth.currentUser()?.name) }}</div>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="card-panel">
+        @if (isLoading()) {
+          <div class="loading-spinner"><div class="spinner-border text-primary"></div></div>
+        } @else {
+          <div class="row g-3" style="padding:1rem;">
+            @for (ann of announcements(); track ann.id) {
+              <div class="col-lg-4">
+                <div class="announcement-item" style="border:1px solid var(--border);border-radius:12px;padding:1.25rem;background:var(--bg-main);display:flex;gap:1rem;">
+                  <div style="flex:1;">
+                    <div class="ann-title" style="font-weight:700;font-size:0.95rem;color:var(--text-main);margin-bottom:0.5rem;">{{ ann.title }}</div>
+                    <div class="ann-desc" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">{{ ann.description }}</div>
+                    <div class="ann-time" style="font-size:0.75rem;color:var(--text-muted);">
+                      {{ ann.createdAt | date:'dd MMM yyyy, hh:mm a' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+            @empty {
+              <div class="col-12 text-center text-muted p-4">No announcements yet.</div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

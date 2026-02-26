@@ -1,0 +1,352 @@
+<div class="d-flex">
+  <app-sidebar role="ADMIN" />
+
+  <div class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Employee Management</div>
+        <div class="page-breadcrumb">Home / Admin / Employees</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-primary-sm" (click)="showAddModal.set(true)">
+          Add Employee
+        </button>
+        <div class="topbar-avatar">{{ getInitials(auth.currentUser()?.name) }}</div>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="card-panel">
+        <div class="card-panel-header" style="flex-direction:column;align-items:stretch;gap:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="card-panel-title">All Employees ({{ filteredEmployees().length }})</div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search employees..."
+                style="border:1px solid var(--border);border-radius:8px;padding:0.5rem 1rem;width:300px;outline:none;" />
+              <button class="btn-secondary-sm" (click)="showFilters.set(!showFilters())">
+                {{ showFilters() ? 'Hide Filters' : 'Show Filters' }}
+              </button>
+            </div>
+          </div>
+          
+          @if (showFilters()) {
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding:1rem;background:#f9fafb;border-radius:8px;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Department</label>
+                <select [(ngModel)]="filters.departmentId" (change)="applyFilters()" class="form-control" style="padding:0.5rem;">
+                  <option [value]="undefined">All Departments</option>
+                  @for (dept of departments(); track dept.id) {
+                    <option [value]="dept.id">{{ dept.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Designation</label>
+                <select [(ngModel)]="filters.designationId" (change)="applyFilters()" class="form-control" style="padding:0.5rem;">
+                  <option [value]="undefined">All Designations</option>
+                  @for (desig of designations(); track desig.id) {
+                    <option [value]="desig.id">{{ desig.title }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Role</label>
+                <select [(ngModel)]="filters.role" (change)="applyFilters()" class="form-control" style="padding:0.5rem;">
+                  <option value="">All Roles</option>
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Status</label>
+                <select [(ngModel)]="filters.active" (change)="applyFilters()" class="form-control" style="padding:0.5rem;">
+                  <option value="">All Status</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
+              <div style="grid-column:span 4;display:flex;justify-content:flex-end;">
+                <button class="btn-secondary-sm" (click)="clearFilters()">
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+        @if (isLoading()) {
+          <div class="loading-spinner"><div class="spinner-border text-primary"></div></div>
+        } @else {
+          <table class="data-table">
+            <thead>
+              <tr><th>Employee</th><th>ID</th><th>Email</th><th>Department</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              @for (emp of filteredEmployees(); track emp.id) {
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.7rem;font-weight:700;">
+                        {{ getInitials(emp.name) }}
+                      </div>
+                      <div>
+                        <div style="font-weight:600;">{{ emp.name }}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ emp.designationTitle }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ emp.employeeId }}</td>
+                  <td>{{ emp.email }}</td>
+                  <td>{{ emp.departmentName }}</td>
+                  <td>
+                    <span class="badge-status" [class.badge-active]="emp.active" [class.badge-inactive]="!emp.active">
+                      {{ emp.active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <button class="btn-sm-action btn-primary" (click)="openEditModal(emp)">
+                        Edit
+                      </button>
+                      @if (emp.role === 'EMPLOYEE') {
+                        <button class="btn-sm-action" style="background:#8b5cf6;color:#fff;" (click)="openManagerModal(emp)">
+                          Change Manager
+                        </button>
+                      }
+                      @if (emp.active) {
+                        <button class="btn-sm-action btn-deact" (click)="deactivate(emp.id)">
+                          Deactivate
+                        </button>
+                      } @else {
+                        <button class="btn-sm-action btn-react" (click)="reactivate(emp.id)">
+                          Activate
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+              @empty {
+                <tr><td colspan="6" class="text-center p-4 text-muted">No employees found</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (showAddModal()) {
+    <div class="modal-overlay" (click)="showAddModal.set(false)">
+      <div class="modal-container" (click)="$event.stopPropagation()" style="max-width:700px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Add New Employee</h3>
+          <button type="button" (click)="showAddModal.set(false)" class="modal-close">&times;</button>
+        </div>
+        <form (ngSubmit)="addEmployee()">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6 form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" [(ngModel)]="newEmployee.firstName" name="firstName" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Last Name</label>
+                <input type="text" [(ngModel)]="newEmployee.lastName" name="lastName" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Email</label>
+                <input type="email" [(ngModel)]="newEmployee.email" name="email" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Employee ID</label>
+                <input type="text" [(ngModel)]="newEmployee.employeeId" name="employeeId" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="text" [(ngModel)]="newEmployee.phone" name="phone" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Joining Date</label>
+                <input type="date" [(ngModel)]="newEmployee.joiningDate" name="joiningDate" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Department *</label>
+                <select [(ngModel)]="newEmployee.departmentId" name="departmentId" required class="form-control">
+                  <option [value]="undefined">Select Department</option>
+                  @for (dept of departments(); track dept.id) {
+                    <option [value]="dept.id">{{ dept.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Designation *</label>
+                <select [(ngModel)]="newEmployee.designationId" name="designationId" required class="form-control">
+                  <option [value]="undefined">Select Designation</option>
+                  @for (desig of designations(); track desig.id) {
+                    <option [value]="desig.id">{{ desig.title }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Role *</label>
+                <select [(ngModel)]="newEmployee.role" name="role" required class="form-control">
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="MANAGER">Manager</option>
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Assign Manager</label>
+                <select [(ngModel)]="newEmployee.managerId" name="managerId" [required]="newEmployee.role === 'EMPLOYEE'" class="form-control" [disabled]="newEmployee.role === 'MANAGER'">
+                  <option [value]="undefined">{{ newEmployee.role === 'MANAGER' ? 'No Manager Required' : 'Select Manager' }}</option>
+                  @for (mgr of managers(); track mgr.id) {
+                    <option [value]="mgr.id">{{ mgr.name }} ({{ mgr.employeeId }})</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Password</label>
+                <div style="position:relative;">
+                  <input [type]="showPassword() ? 'text' : 'password'" [(ngModel)]="newEmployee.password" name="password" required class="form-control" />
+                  <button type="button" class="toggle-pass" [class.hide]="!showPassword()" (click)="togglePassword()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#6b7280;cursor:pointer;font-size:1rem;">
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Salary</label>
+                <input type="number" [(ngModel)]="newEmployee.salary" name="salary" required class="form-control" />
+              </div>
+              <div class="col-12 form-group">
+                <label class="form-label">Address</label>
+                <textarea [(ngModel)]="newEmployee.address" name="address" rows="2" required class="form-control"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" (click)="showAddModal.set(false)" class="btn-secondary-sm">Cancel</button>
+              <button type="submit" class="btn-primary-sm">Add Employee</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showEditModal()) {
+    <div class="modal-overlay" (click)="showEditModal.set(false)">
+      <div class="modal-container" (click)="$event.stopPropagation()" style="max-width:700px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit Employee</h3>
+          <button type="button" (click)="showEditModal.set(false)" class="modal-close">&times;</button>
+        </div>
+        <form (ngSubmit)="updateEmployee()">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6 form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" [(ngModel)]="editEmployee.firstName" name="firstName" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Last Name</label>
+                <input type="text" [(ngModel)]="editEmployee.lastName" name="lastName" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Email</label>
+                <input type="email" [(ngModel)]="editEmployee.email" name="email" required class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Employee ID</label>
+                <input type="text" [(ngModel)]="editEmployee.employeeId" name="employeeId" required class="form-control" disabled />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="text" [(ngModel)]="editEmployee.phone" name="phone" class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Joining Date</label>
+                <input type="date" [(ngModel)]="editEmployee.joiningDate" name="joiningDate" class="form-control" />
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Department *</label>
+                <select [(ngModel)]="editEmployee.departmentId" name="departmentId" required class="form-control">
+                  <option [value]="undefined">Select Department</option>
+                  @for (dept of departments(); track dept.id) {
+                    <option [value]="dept.id">{{ dept.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Designation *</label>
+                <select [(ngModel)]="editEmployee.designationId" name="designationId" required class="form-control">
+                  <option [value]="undefined">Select Designation</option>
+                  @for (desig of designations(); track desig.id) {
+                    <option [value]="desig.id">{{ desig.title }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Role *</label>
+                <select [(ngModel)]="editEmployee.role" name="role" required class="form-control">
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="MANAGER">Manager</option>
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Assign Manager</label>
+                <select [(ngModel)]="editEmployee.managerId" name="managerId" class="form-control" [disabled]="editEmployee.role === 'MANAGER'">
+                  <option [value]="undefined">{{ editEmployee.role === 'MANAGER' ? 'No Manager Required' : 'Select Manager' }}</option>
+                  @for (mgr of managers(); track mgr.id) {
+                    <option [value]="mgr.id">{{ mgr.name }} ({{ mgr.employeeId }})</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 form-group">
+                <label class="form-label">Salary</label>
+                <input type="number" [(ngModel)]="editEmployee.salary" name="salary" class="form-control" />
+              </div>
+              <div class="col-12 form-group">
+                <label class="form-label">Address</label>
+                <textarea [(ngModel)]="editEmployee.address" name="address" rows="2" class="form-control"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" (click)="showEditModal.set(false)" class="btn-secondary-sm">Cancel</button>
+              <button type="submit" class="btn-primary-sm">Update Employee</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showManagerModal()) {
+    <div class="modal-overlay" (click)="showManagerModal.set(false)">
+      <div class="modal-container" (click)="$event.stopPropagation()" style="max-width:500px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Change Reporting Manager</h3>
+          <button type="button" (click)="showManagerModal.set(false)" class="modal-close">&times;</button>
+        </div>
+        <form (ngSubmit)="assignManager()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Employee</label>
+              <p style="font-weight:600;color:#111827;">{{ selectedEmployee?.name }} ({{ selectedEmployee?.employeeId }})</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Select New Manager *</label>
+              <select [(ngModel)]="newManagerId" name="managerId" required class="form-control">
+                <option [value]="undefined">Select Manager</option>
+                @for (mgr of managers(); track mgr.id) {
+                  <option [value]="mgr.id">{{ mgr.name }} ({{ mgr.employeeId }})</option>
+                }
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="button" (click)="showManagerModal.set(false)" class="btn-secondary-sm">Cancel</button>
+              <button type="submit" class="btn-primary-sm">Assign Manager</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
