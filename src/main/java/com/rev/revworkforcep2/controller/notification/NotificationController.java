@@ -84,7 +84,7 @@ public class NotificationController {
 
     private final NotificationService service;
 
-    // 🔹 ADMIN → View all notifications
+    // Admin -> View all notifications
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAll() {
@@ -98,7 +98,7 @@ public class NotificationController {
         );
     }
 
-    // 🔹 ALL USERS → View own notifications
+    // All Users -> View own notifications
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyNotifications() {
@@ -112,7 +112,7 @@ public class NotificationController {
         );
     }
 
-    // 🔹 ALL USERS → Mark own notification as read
+    // All users -> Mark own notification as read
     @PutMapping("/{id}/read")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
@@ -137,6 +137,15 @@ public class NotificationController {
                         "Unread count fetched",
                         service.getUnreadCount()
                 )
+        );
+    }
+
+    @PutMapping("/read-all")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
+        service.markAllAsRead();
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "All notifications marked as read", null)
         );
     }
 }

@@ -10,11 +10,22 @@ import java.util.List;
 public class ActivityMapper {
 
     public ActivityLogResponse toResponse(ActivityLog entity) {
+        String userName = "System";
+        String userRole = "SYSTEM";
+        Long userId = null;
+        
+        if (entity.getUser() != null) {
+            userName = entity.getUser().getFirstName() + " " + entity.getUser().getLastName();
+            userRole = entity.getUser().getRole().name();
+            userId = entity.getUser().getId();
+        }
 
         return new ActivityLogResponse(
                 entity.getId(),
                 entity.getAction(),
-                entity.getUser().getId(),
+                userId,
+                userName,
+                userRole,
                 entity.getCreatedAt()
         );
     }

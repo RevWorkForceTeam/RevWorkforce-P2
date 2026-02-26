@@ -8,9 +8,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface LeaveMapper {
 
-    // =====================================================
-    // LeaveApplication Mapping
-    // =====================================================
+
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
@@ -22,14 +20,17 @@ public interface LeaveMapper {
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "leaveTypeId", source = "leaveType.id")
-    @Mapping(target = "fromDate", source = "startDate")
-    @Mapping(target = "toDate", source = "endDate")
+    @Mapping(target = "leaveType", source = "leaveType.name")
+    @Mapping(target = "employeeName", expression = "java(entity.getUser().getFirstName() + ' ' + entity.getUser().getLastName())")
+    @Mapping(target = "startDate", source = "startDate")
+    @Mapping(target = "endDate", source = "endDate")
+    @Mapping(target = "numberOfDays", expression = "java(java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate(), entity.getEndDate()) + 1)")
+    @Mapping(target = "appliedDate", source = "createdAt")
+    @Mapping(target = "managerComment", source = "managerComment")
     LeaveApplicationResponse toResponse(LeaveApplication entity);
 
 
-    // =====================================================
-    // LeaveType Mapping
-    // =====================================================
+
 
     LeaveType toEntity(CreateLeaveTypeRequest request);
 
@@ -39,9 +40,7 @@ public interface LeaveMapper {
     LeaveTypeResponse toResponse(LeaveType entity);
 
 
-    // =====================================================
-    // Holiday Mapping
-    // =====================================================
+
 
     Holiday toEntity(CreateHolidayRequest request);
 
@@ -51,12 +50,12 @@ public interface LeaveMapper {
     HolidayResponse toResponse(Holiday entity);
 
 
-    // =====================================================
-    // LeaveBalance Mapping
-    // =====================================================
+
 
     @Mapping(target = "employeeId", source = "user.id")
+    @Mapping(target = "userName", expression = "java(entity.getUser().getFirstName() + ' ' + entity.getUser().getLastName())")
     @Mapping(target = "leaveTypeId", source = "leaveType.id")
+    @Mapping(target = "leaveTypeName", source = "leaveType.name")
     @Mapping(target = "totalQuota", source = "totalDays")
     @Mapping(target = "used", source = "usedDays")
     @Mapping(target = "remaining", source = "remainingDays")
@@ -64,9 +63,7 @@ public interface LeaveMapper {
 
 
 
-    // ===============================
-// Team Calendar Mapping
-// ===============================
+
 
     default TeamLeaveCalenderResponse toTeamCalendar(LeaveApplication leave) {
 
@@ -75,8 +72,7 @@ public interface LeaveMapper {
         TeamLeaveCalenderResponse dto = new TeamLeaveCalenderResponse();
 
         dto.setEmployeeId(leave.getUser().getId());
-        dto.setEmployeeName(leave.getUser().getFirstName());
-        dto.setEmployeeName(leave.getUser().getLastName());
+        dto.setEmployeeName(leave.getUser().getFirstName() + " " + leave.getUser().getLastName());
         dto.setStartDate(leave.getStartDate());
         dto.setEndDate(leave.getEndDate());
         dto.setLeaveType(leave.getLeaveType().getName());

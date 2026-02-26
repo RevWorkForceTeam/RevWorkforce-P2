@@ -27,6 +27,6 @@ public class CreateUserRequest {
 
     private Long departmentId;
     private Long designationId;
-    private Long managerId; // optional
+    private Long managerId;
 }
 

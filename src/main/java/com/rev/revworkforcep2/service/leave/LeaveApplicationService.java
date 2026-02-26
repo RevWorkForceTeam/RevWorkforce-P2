@@ -2,6 +2,7 @@ package com.rev.revworkforcep2.service.leave;
 
 import com.rev.revworkforcep2.dto.request.leave.ApplyLeaveRequest;
 import com.rev.revworkforcep2.dto.response.leave.LeaveApplicationResponse;
+import com.rev.revworkforcep2.dto.response.leave.LeaveReportResponse;
 import com.rev.revworkforcep2.dto.response.leave.TeamLeaveCalenderResponse;
 
 import java.util.List;
@@ -23,5 +24,8 @@ public interface LeaveApplicationService {
 
     List<LeaveApplicationResponse> getPendingLeavesForManager();
     List<TeamLeaveCalenderResponse> getTeamCalendar();
+    List<LeaveApplicationResponse> getAllLeaves();
+    List<LeaveReportResponse> getDepartmentWiseReport();
+    List<LeaveReportResponse> getEmployeeWiseReport();
 }
 

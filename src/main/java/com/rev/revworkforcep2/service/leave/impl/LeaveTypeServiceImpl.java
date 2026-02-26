@@ -89,8 +89,5 @@ public class LeaveTypeServiceImpl implements LeaveTypeService {
 
         leaveTypeRepository.delete(entity);
     }
-//    @Override
-//    public List<LeaveType> getAllLeaveTypeEntities() {
-//        return leaveTypeRepository.findAll();
-//    }
+
 }

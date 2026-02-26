@@ -28,9 +28,7 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
     private final UserRepository userRepository;
     private final LeaveMapper leaveMapper;
 
-    // =========================================================
-    // Create initial balance (ADMIN)
-    // =========================================================
+
     @Override
     public LeaveBalanceResponse createBalance(Long employeeId,
                                               Long leaveTypeId,
@@ -56,9 +54,33 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         return leaveMapper.toResponse(saved);
     }
 
-    // =========================================================
-    // Get balance for specific leave type
-    // =========================================================
+    @Override
+    public LeaveBalanceResponse adjustBalance(Long employeeId,
+                                              Long leaveTypeId,
+                                              int adjustment,
+                                              String reason) {
+
+        LeaveBalance balance = leaveBalanceRepository
+                .findByUserIdAndLeaveTypeId(employeeId, leaveTypeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Leave balance not found"));
+
+        balance.setTotalDays(balance.getTotalDays() + adjustment);
+        balance.setRemainingDays(balance.getRemainingDays() + adjustment);
+
+        LeaveBalance saved = leaveBalanceRepository.save(balance);
+        return leaveMapper.toResponse(saved);
+    }
+
+    @Override
+    public List<LeaveBalanceResponse> getAllBalances() {
+        return leaveBalanceRepository.findAll()
+                .stream()
+                .map(leaveMapper::toResponse)
+                .toList();
+    }
+
+
     @Override
     public LeaveBalanceResponse getBalance(Long employeeId,
                                            Long leaveTypeId) {
@@ -71,9 +93,7 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         return leaveMapper.toResponse(balance);
     }
 
-    // =========================================================
-    // Get all balances for specific employee
-    // =========================================================
+
     @Override
     public List<LeaveBalanceResponse> getEmployeeBalances(Long employeeId) {
 
@@ -89,9 +109,7 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
                 .toList();
     }
 
-    // =========================================================
-    // 🔥 Get balances for logged-in employee
-    // =========================================================
+
     @Override
     public List<LeaveBalanceResponse> getMyBalances() {
 
@@ -113,9 +131,7 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
                 .toList();
     }
 
-    // =========================================================
-    // Deduct leave days
-    // =========================================================
+
     @Override
     public void deductLeave(Long employeeId,
                             Long leaveTypeId,

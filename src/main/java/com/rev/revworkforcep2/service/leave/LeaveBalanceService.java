@@ -10,12 +10,19 @@ public interface LeaveBalanceService {
                                        Long leaveTypeId,
                                        int totalQuota);
 
+    LeaveBalanceResponse adjustBalance(Long employeeId,
+                                       Long leaveTypeId,
+                                       int adjustment,
+                                       String reason);
+
+    List<LeaveBalanceResponse> getAllBalances();
+
     LeaveBalanceResponse getBalance(Long employeeId,
                                     Long leaveTypeId);
 
     List<LeaveBalanceResponse> getEmployeeBalances(Long employeeId);
 
-    List<LeaveBalanceResponse> getMyBalances();   // 🔥 For logged-in user
+    List<LeaveBalanceResponse> getMyBalances();
 
     void deductLeave(Long employeeId,
                      Long leaveTypeId,

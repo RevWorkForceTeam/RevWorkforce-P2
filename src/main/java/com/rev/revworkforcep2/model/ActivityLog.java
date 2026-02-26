@@ -19,7 +19,7 @@ public class ActivityLog extends BaseEntity {
     @Column(nullable = false)
     private String action;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 }

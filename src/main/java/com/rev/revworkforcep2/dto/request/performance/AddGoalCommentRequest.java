@@ -3,9 +3,7 @@ package com.rev.revworkforcep2.dto.request.performance;
 import lombok.Data;
 
 @Data
-public class UpdateGoalProgressRequest {
-
+public class AddGoalCommentRequest {
     private Long goalId;
-
-    private Integer progress;
+    private String comment;
 }

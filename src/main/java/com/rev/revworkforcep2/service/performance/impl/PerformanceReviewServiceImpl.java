@@ -22,6 +22,28 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     private final PerformanceReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final PerformanceMapper performanceMapper;
+    private final com.rev.revworkforcep2.service.notification.NotificationService notificationService;
+
+    @Override
+    public List<PerformanceReviewResponse> getMyReviews() {
+        Long userId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        return reviewRepository.findByUserId(userId)
+                .stream()
+                .map(performanceMapper::toReviewResponse)
+                .toList();
+    }
+
+    @Override
+    public List<PerformanceReviewResponse> getTeamReviews() {
+        Long managerId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        List<User> teamMembers = userRepository.findByManagerId(managerId);
+        
+        return reviewRepository.findAll()
+                .stream()
+                .filter(r -> teamMembers.stream().anyMatch(tm -> tm.getId().equals(r.getUser().getId())))
+                .map(performanceMapper::toReviewResponse)
+                .toList();
+    }
 
     @Override
     public PerformanceReviewResponse createReview(CreateReviewRequest request) {
@@ -129,7 +151,7 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Manager not found"));
 
-        // Get team members
+
         List<User> teamMembers =
                 userRepository.findByManagerId(manager.getId());
 
@@ -137,20 +159,20 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
             throw new ResourceNotFoundException("No team members found");
         }
 
-        // Get all reviews of team members
+
         List<PerformanceReview> reviews = reviewRepository.findAll()
                 .stream()
                 .filter(r -> teamMembers.contains(r.getUser()))
                 .toList();
 
-        // Filter by year (if provided)
+
         if (request.getYear() != null) {
             reviews = reviews.stream()
                     .filter(r -> r.getYear() == request.getYear())
                     .toList();
         }
 
-        // Filter by status (if provided)
+
         if (request.getStatus() != null) {
             ReviewStatus status;
             try {
@@ -195,19 +217,21 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     public PerformanceReviewResponse createPerformanceReview(
             CreatePerformanceReviewRequest request) {
 
-        if (request.getEmployeeId() == null) {
-            throw new InvalidRequestException("Employee ID is required");
+
+        Long employeeId = request.getEmployeeId();
+        if (employeeId == null) {
+            employeeId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
         }
 
         if (request.getYear() == null) {
             throw new InvalidRequestException("Year is required");
         }
 
-        User employee = userRepository.findById(request.getEmployeeId())
+        User employee = userRepository.findById(employeeId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Employee not found"));
 
-        // Prevent duplicate review for same year
+
         if (reviewRepository
                 .findByUserIdAndYear(employee.getId(), request.getYear())
                 .isPresent()) {
@@ -217,7 +241,7 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                             + request.getYear());
         }
 
-        // Validate rating range (1–5)
+
         if (request.getSelfRating() == null ||
                 request.getSelfRating() < 1 ||
                 request.getSelfRating() > 5) {
@@ -226,7 +250,7 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                     "Self rating must be between 1 and 5");
         }
 
-        // Map DTO → Entity
+
         PerformanceReview review =
                 performanceMapper.toReviewEntity(request);
 
@@ -248,13 +272,13 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Review not found"));
 
-        // Only submitted reviews can be reviewed
+
         if (review.getStatus() != ReviewStatus.SUBMITTED) {
             throw new InvalidStateException(
                     "Only submitted reviews can be reviewed");
         }
 
-        // Validate rating
+
         if (request.getRating() == null ||
                 request.getRating() < 1 ||
                 request.getRating() > 5) {
@@ -268,6 +292,13 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         review.setStatus(ReviewStatus.REVIEWED);
 
         PerformanceReview saved = reviewRepository.save(review);
+
+
+        notificationService.triggerForUser(
+                review.getUser().getId(),
+                "Your manager provided <strong>feedback</strong> on your performance review.",
+                "PERFORMANCE"
+        );
 
         return performanceMapper.toReviewResponse(saved);
     }
@@ -284,7 +315,7 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Review not found"));
 
-        // Only DRAFT reviews can be submitted
+
         if (review.getStatus() != ReviewStatus.DRAFT) {
             throw new InvalidStateException(
                     "Only draft reviews can be submitted");
@@ -293,6 +324,15 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         review.setStatus(ReviewStatus.SUBMITTED);
 
         PerformanceReview savedReview = reviewRepository.save(review);
+
+
+        if (review.getUser().getManager() != null) {
+            notificationService.triggerForUser(
+                    review.getUser().getManager().getId(),
+                    "<strong>" + review.getUser().getFirstName() + " " + review.getUser().getLastName() + "</strong> submitted a performance review.",
+                    "PERFORMANCE"
+            );
+        }
 
         return performanceMapper.toReviewResponse(savedReview);
     }

@@ -4,6 +4,9 @@ import lombok.Data;
 @Data
 public class PerformanceReviewResponse {
     private Long id;
+    private Long employeeId;
+    private String employeeName;
+    private Integer year;
     private String deliverables;
     private String accomplishments;
     private String improvementAreas;

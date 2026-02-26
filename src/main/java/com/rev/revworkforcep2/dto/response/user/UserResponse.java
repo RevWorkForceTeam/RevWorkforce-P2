@@ -32,6 +32,22 @@ public class UserResponse {
     private Long designationId;
     private String designationTitle;
 
-    // Changed from managerId
     private ManagerSummaryResponse manager;
+
+
+    public String getName() {
+        return firstName + " " + lastName;
+    }
+
+    public String getDepartment() {
+        return departmentName;
+    }
+
+    public String getDesignation() {
+        return designationTitle;
+    }
+
+    public String getManagerName() {
+        return manager != null ? manager.getFirstName() + " " + manager.getLastName() : null;
+    }
 }

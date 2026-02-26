@@ -19,9 +19,7 @@ public class UserController {
 
     private final UserService userService;
 
-    // =====================================================
-    // ADMIN OPERATIONS
-    // =====================================================
+    // admin operations
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
@@ -82,11 +80,39 @@ public class UserController {
         );
     }
 
-    // =====================================================
-    // VIEW OPERATIONS
-    // =====================================================
+    // Employee operations
 
-    // 🔹 Get Single User (Full Profile View)
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyProfile() {
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Profile fetched",
+                        userService.getMyProfile())
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
+            @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Profile updated",
+                        userService.updateMyProfile(request))
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
+    @PutMapping("/me/change-password")
+    public ResponseEntity<ApiResponse<String>> changeMyPassword(
+            @RequestBody ChangePasswordRequest request) {
+        userService.changeMyPassword(request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Password changed", null)
+        );
+    }
+
+    // View Operations
+
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(
@@ -98,8 +124,8 @@ public class UserController {
         );
     }
 
-    // 🔹 Get All Users (Directory View - Summary Only)
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN','MANAGER')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> getAllUsers() {
 
@@ -109,7 +135,7 @@ public class UserController {
         );
     }
 
-    // 🔹 Get Users By Department
+
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @GetMapping("/department/{departmentId}")
     public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> getUsersByDepartment(
@@ -121,7 +147,6 @@ public class UserController {
         );
     }
 
-    // 🔹 Get Users By Manager (Team View)
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @GetMapping("/manager/{managerId}")
     public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> getUsersByManager(
@@ -133,7 +158,6 @@ public class UserController {
         );
     }
 
-    // 🔹 Filter Users (Admin Advanced Search)
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/filter")
     public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> filterUsers(

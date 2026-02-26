@@ -1,6 +1,7 @@
 package com.rev.revworkforcep2.dto.response.leave;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,4 +15,11 @@ public class TeamLeaveCalenderResponse {
     private LocalDate endDate;
     private String leaveType;
     private String status;
+    
+    public Long getDays() {
+        if (startDate != null && endDate != null) {
+            return ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        }
+        return 0L;
+    }
 }

@@ -49,7 +49,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         Announcement saved = repository.save(announcement);
 
-        activityLogService.log(1L,
+        Long currentUserId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        activityLogService.log(currentUserId,
                 "Created Announcement: " + saved.getTitle());
 
         notificationService.triggerForAllUsers(
@@ -73,7 +74,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         Announcement updated = repository.save(announcement);
 
-        activityLogService.log(1L,
+        Long currentUserId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        activityLogService.log(currentUserId,
                 "Updated Announcement: " + updated.getTitle());
 
         return mapper.toResponse(updated);
@@ -88,7 +90,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         repository.delete(announcement);
 
-        activityLogService.log(1L,
+        Long currentUserId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        activityLogService.log(currentUserId,
                 "Deleted Announcement: " + announcement.getTitle());
     }
 }
