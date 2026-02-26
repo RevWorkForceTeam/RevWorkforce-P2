@@ -10,4 +10,7 @@ public class GoalResponse {
     private String priority;
     private String status;
     private Integer progress;
+    private String managerComment;
+    private Long employeeId;
+    private String employeeName;
 }

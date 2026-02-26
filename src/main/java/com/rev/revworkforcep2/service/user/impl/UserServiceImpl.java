@@ -10,8 +10,10 @@ import com.rev.revworkforcep2.model.*;
 import com.rev.revworkforcep2.repository.*;
 import com.rev.revworkforcep2.service.user.UserService;
 import com.rev.revworkforcep2.specification.UserSpecification;
+import com.rev.revworkforcep2.security.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,10 +26,46 @@ public class UserServiceImpl implements UserService {
     private final DepartmentRepository departmentRepository;
     private final DesignationRepository designationRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final LeaveTypeRepository leaveTypeRepository;
+    private final LeaveBalanceRepository leaveBalanceRepository;
 
-    // =====================================================
-    // CREATE USER
-    // =====================================================
+
+
+    @Override
+    public UserResponse getMyProfile() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return getUserById(userId);
+    }
+
+    @Override
+    public UserResponse updateMyProfile(UpdateUserRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (request.getPhone() != null) user.setPhone(request.getPhone());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getEmergencyContact() != null) user.setEmergencyContact(request.getEmergencyContact());
+
+        return userMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public void changeMyPassword(String currentPassword, String newPassword) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BusinessValidationException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+
 
     @Override
     public UserResponse createUser(CreateUserRequest request) {
@@ -62,13 +100,15 @@ public class UserServiceImpl implements UserService {
         user.setDesignation(designation);
         user.setManager(manager);
         user.setActive(true);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        return userMapper.toResponse(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+
+        createRoleBasedLeaveBalances(savedUser);
+
+        return userMapper.toResponse(savedUser);
     }
 
-    // =====================================================
-    // UPDATE USER
-    // =====================================================
 
     @Override
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
@@ -88,10 +128,6 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toResponse(userRepository.save(user));
     }
-
-    // =====================================================
-    // ASSIGN MANAGER
-    // =====================================================
 
     @Override
     public UserResponse assignManager(Long userId, Long managerId) {
@@ -116,9 +152,6 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
-    // =====================================================
-    // ACTIVATE / DEACTIVATE
-    // =====================================================
 
     @Override
     public void deactivateUser(Long id) {
@@ -155,9 +188,6 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
-    // =====================================================
-    // LIST APIs (Now Using Summary DTO)
-    // =====================================================
 
     @Override
     public List<UserSummaryResponse> getUsersByDepartment(Long departmentId) {
@@ -198,9 +228,6 @@ public class UserServiceImpl implements UserService {
                 .toList();
     }
 
-    // =====================================================
-    // SINGLE USER (FULL RESPONSE)
-    // =====================================================
 
     @Override
     public UserResponse getUserById(Long id) {
@@ -208,5 +235,51 @@ public class UserServiceImpl implements UserService {
                 userRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"))
         );
+    }
+    
+    private void createRoleBasedLeaveBalances(User user) {
+        List<LeaveType> leaveTypes = leaveTypeRepository.findAll();
+        
+        for (LeaveType leaveType : leaveTypes) {
+            boolean exists = leaveBalanceRepository
+                    .findByUserIdAndLeaveTypeId(user.getId(), leaveType.getId())
+                    .isPresent();
+                    
+            if (exists) continue;
+            
+            LeaveBalance balance = new LeaveBalance();
+            balance.setUser(user);
+            balance.setLeaveType(leaveType);
+            
+            int quota = getRoleBasedQuota(user.getRole(), leaveType.getName());
+            balance.setTotalDays(quota);
+            balance.setUsedDays(0);
+            balance.setRemainingDays(quota);
+            
+            leaveBalanceRepository.save(balance);
+        }
+    }
+    
+    private int getRoleBasedQuota(Role role, String leaveTypeName) {
+        return switch (role) {
+            case ADMIN -> switch (leaveTypeName) {
+                case "Sick Leave" -> 15;
+                case "Casual Leave" -> 20;
+                case "Annual Leave" -> 30;
+                default -> 12;
+            };
+            case MANAGER -> switch (leaveTypeName) {
+                case "Sick Leave" -> 12;
+                case "Casual Leave" -> 18;
+                case "Annual Leave" -> 25;
+                default -> 10;
+            };
+            case EMPLOYEE -> switch (leaveTypeName) {
+                case "Sick Leave" -> 10;
+                case "Casual Leave" -> 15;
+                case "Annual Leave" -> 21;
+                default -> 8;
+            };
+        };
     }
 }

@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ProvidedFeedbackRequest {
 
-    private String feedback;   // Required
+    private String feedback;
 
-    private Integer rating;    // Must be between 1 and 5
+    private Integer rating;
 }

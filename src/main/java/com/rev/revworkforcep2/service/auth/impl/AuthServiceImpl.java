@@ -29,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
 
+        // Authenticate using email or employee id
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -41,7 +42,9 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtTokenProvider.generateToken(userDetails);
 
+        // Find user by email or employee id
         User user = userRepository.findByEmail(request.getEmail())
+                .or(() -> userRepository.findByEmployeeId(request.getEmail()))
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String fullName = user.getFirstName() + " " + user.getLastName();
@@ -49,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
         return new LoginResponse(
                 token,
                 "Bearer",
+                user.getId(),
                 user.getRole().name(),
                 user.getEmail(),
                 fullName

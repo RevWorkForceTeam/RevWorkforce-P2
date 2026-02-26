@@ -8,7 +8,7 @@ public class LogMessageBuilder {
     private static final int MAX_ARG_LENGTH = 200;
 
     private LogMessageBuilder() {
-        // Prevent instantiation
+
     }
 
     public static String buildArguments(Object[] args) {
@@ -30,7 +30,7 @@ public class LogMessageBuilder {
 
         String value = obj.toString();
 
-        // Limit very large log output
+
         if (value.length() > MAX_ARG_LENGTH) {
             return value.substring(0, MAX_ARG_LENGTH) + "...";
         }

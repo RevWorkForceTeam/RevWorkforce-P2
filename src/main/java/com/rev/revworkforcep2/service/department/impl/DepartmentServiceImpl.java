@@ -20,8 +20,8 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
-    // Create Department
 
+    // Create Department
     @Override
     public DepartmentResponse createDepartment(CreateDepartmentRequest request) {
 
@@ -56,7 +56,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
 
-    // Get Department By ID
+    // Get Department by id
 
     @Override
     public DepartmentResponse getDepartmentById(Long id) {

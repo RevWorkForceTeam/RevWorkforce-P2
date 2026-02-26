@@ -8,6 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreateHolidayRequest {
-    private LocalDate holidayDate; // camelCase
+    private LocalDate holidayDate;
     private String name;
 }

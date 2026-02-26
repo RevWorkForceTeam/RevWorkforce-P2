@@ -19,4 +19,5 @@ public interface NotificationService {
 
     void triggerForUser(Long userId, String message, String type);
     long getUnreadCount();
+    void markAllAsRead();
 }

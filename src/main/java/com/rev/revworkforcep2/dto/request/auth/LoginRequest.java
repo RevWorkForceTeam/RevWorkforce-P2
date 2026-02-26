@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 public class LoginRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email or Employee ID is required")
     private String email;
 
     @NotBlank(message = "Password is required")

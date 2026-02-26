@@ -11,13 +11,13 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface DesignationMapper {
 
-    // Create mapping
+
     Designation toEntity(CreateDesignationRequest request);
 
-    // Entity → Response mapping
+
     DesignationResponse toResponse(Designation designation);
 
-    // Update mapping
+
     void updateEntityFromRequest(UpdateDesignationRequest request,
                                  @MappingTarget Designation designation);
 }

@@ -2,6 +2,7 @@ package com.rev.revworkforcep2.service.leave.impl;
 
 import com.rev.revworkforcep2.dto.request.leave.ApplyLeaveRequest;
 import com.rev.revworkforcep2.dto.response.leave.LeaveApplicationResponse;
+import com.rev.revworkforcep2.dto.response.leave.LeaveReportResponse;
 import com.rev.revworkforcep2.dto.response.leave.TeamLeaveCalenderResponse;
 import com.rev.revworkforcep2.exception.BusinessValidationException;
 import com.rev.revworkforcep2.exception.ConflictException;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 
@@ -29,10 +32,9 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final UserRepository userRepository;
     private final LeaveMapper leaveMapper;
+    private final com.rev.revworkforcep2.service.notification.NotificationService notificationService;
 
-    // =========================================================
-    // APPLY LEAVE (Logged-in user only)
-    // =========================================================
+
     @Override
     public LeaveApplicationResponse applyLeave(ApplyLeaveRequest request) {
 
@@ -60,19 +62,26 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
         LeaveApplication leave = leaveMapper.toEntity(request, user, leaveType);
         leave.setStatus(LeaveStatus.PENDING);
 
-        // Assign manager if employee
+
         if (user.getRole() == Role.EMPLOYEE && user.getManager() != null) {
             leave.setManager(user.getManager());
         }
 
         LeaveApplication saved = leaveApplicationRepository.save(leave);
 
+
+        if (user.getManager() != null) {
+            notificationService.triggerForUser(
+                    user.getManager().getId(),
+                    "<strong>" + user.getFirstName() + " " + user.getLastName() + "</strong> applied for <strong>" + leaveType.getName() + "</strong>.",
+                    "LEAVE"
+            );
+        }
+
         return leaveMapper.toResponse(saved);
     }
 
-    // =========================================================
-    // APPROVE LEAVE
-    // =========================================================
+
     @Override
     public LeaveApplicationResponse approveLeave(Long leaveId) {
 
@@ -102,14 +111,19 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
         leaveBalanceRepository.save(balance);
 
         leave.setStatus(LeaveStatus.APPROVED);
+        leave.setManagerComment("Approved");
         leaveApplicationRepository.save(leave);
+
+        notificationService.triggerForUser(
+                leaveOwner.getId(),
+                "Your <strong>" + leave.getLeaveType().getName() + "</strong> has been <strong style='color:#059669'>approved</strong>.",
+                "LEAVE"
+        );
 
         return leaveMapper.toResponse(leave);
     }
 
-    // =========================================================
-    // REJECT LEAVE
-    // =========================================================
+
     @Override
     public LeaveApplicationResponse rejectLeave(Long leaveId, String comment) {
 
@@ -135,12 +149,16 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
         leave.setManagerComment(comment);
         leaveApplicationRepository.save(leave);
 
+        notificationService.triggerForUser(
+                leaveOwner.getId(),
+                "Your <strong>" + leave.getLeaveType().getName() + "</strong> has been <strong style='color:#dc2626'>rejected</strong>.",
+                "LEAVE"
+        );
+
         return leaveMapper.toResponse(leave);
     }
 
-    // =========================================================
-    // CANCEL LEAVE (Owner only)
-    // =========================================================
+
     @Override
     public LeaveApplicationResponse cancelLeave(Long leaveId) {
 
@@ -162,9 +180,6 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
         return leaveMapper.toResponse(leave);
     }
 
-    // =========================================================
-    // GET MY LEAVES
-    // =========================================================
     @Override
     public List<LeaveApplicationResponse> getMyLeaves() {
 
@@ -177,9 +192,6 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
                 .toList();
     }
 
-    // =========================================================
-    // GET PENDING LEAVES FOR LOGGED-IN MANAGER
-    // =========================================================
     @Override
     public List<LeaveApplicationResponse> getPendingLeavesForManager() {
 
@@ -193,9 +205,7 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
                 .toList();
     }
 
-    // =========================================================
-    // ASSIGN DEFAULT LEAVES
-    // =========================================================
+
     @Override
     public void assignDefaultLeaves(Long userId) {
 
@@ -215,35 +225,59 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
             LeaveBalance balance = new LeaveBalance();
             balance.setUser(user);
             balance.setLeaveType(type);
-            balance.setTotalDays(type.getDefaultQuota());
+            
+
+            int quota = getRoleBasedQuota(user.getRole(), type.getName());
+            balance.setTotalDays(quota);
             balance.setUsedDays(0);
-            balance.setRemainingDays(type.getDefaultQuota());
+            balance.setRemainingDays(quota);
 
             leaveBalanceRepository.save(balance);
         }
     }
+    
+    private int getRoleBasedQuota(Role role, String leaveTypeName) {
+        return switch (role) {
+            case ADMIN -> switch (leaveTypeName) {
+                case "Sick Leave" -> 15;
+                case "Casual Leave" -> 20;
+                case "Annual Leave" -> 30;
+                default -> 12;
+            };
+            case MANAGER -> switch (leaveTypeName) {
+                case "Sick Leave" -> 12;
+                case "Casual Leave" -> 18;
+                case "Annual Leave" -> 25;
+                default -> 10;
+            };
+            case EMPLOYEE -> switch (leaveTypeName) {
+                case "Sick Leave" -> 10;
+                case "Casual Leave" -> 15;
+                case "Annual Leave" -> 21;
+                default -> 8;
+            };
+        };
+    }
 
-    // =========================================================
-    // PRIVATE AUTHORIZATION CHECK
-    // =========================================================
+
     private boolean isAuthorizedToApprove(User leaveOwner,
                                           LeaveApplication leave,
                                           User currentUser) {
 
-        // Employee leave → manager approves
+
         if (leaveOwner.getRole() == Role.EMPLOYEE &&
                 leave.getManager() != null &&
                 leave.getManager().getId().equals(currentUser.getId())) {
             return true;
         }
 
-        // Manager leave → admin approves
+
         if (leaveOwner.getRole() == Role.MANAGER &&
                 currentUser.getRole() == Role.ADMIN) {
             return true;
         }
 
-        // Admin leave → admin approves
+
         return leaveOwner.getRole() == Role.ADMIN &&
                 currentUser.getRole() == Role.ADMIN;
     }
@@ -282,5 +316,67 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
         combined.addAll(holidayDtos);
 
         return combined;
+    }
+
+    @Override
+    public List<LeaveApplicationResponse> getAllLeaves() {
+        return leaveApplicationRepository.findAll()
+                .stream()
+                .map(leaveMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<LeaveReportResponse> getDepartmentWiseReport() {
+        List<User> users = userRepository.findAll();
+        Map<String, List<User>> usersByDept = users.stream()
+                .collect(Collectors.groupingBy(u -> 
+                    u.getDepartment() != null ? u.getDepartment().getName() : "No Department"
+                ));
+
+        List<LeaveReportResponse> reports = new ArrayList<>();
+        for (Map.Entry<String, List<User>> entry : usersByDept.entrySet()) {
+            String deptName = entry.getKey();
+            List<Long> userIds = entry.getValue().stream().map(User::getId).toList();
+            List<LeaveApplication> leaves = leaveApplicationRepository.findAll().stream()
+                    .filter(l -> userIds.contains(l.getUser().getId()))
+                    .toList();
+
+            LeaveReportResponse report = new LeaveReportResponse();
+            report.setName(deptName);
+            report.setDepartment(deptName);
+            report.setTotalLeaves(leaves.size());
+            report.setApprovedLeaves((int) leaves.stream().filter(l -> l.getStatus() == LeaveStatus.APPROVED).count());
+            report.setPendingLeaves((int) leaves.stream().filter(l -> l.getStatus() == LeaveStatus.PENDING).count());
+            report.setRejectedLeaves((int) leaves.stream().filter(l -> l.getStatus() == LeaveStatus.REJECTED).count());
+            report.setCasualLeaves((int) leaves.stream().filter(l -> "Casual Leave".equals(l.getLeaveType().getName())).count());
+            report.setSickLeaves((int) leaves.stream().filter(l -> "Sick Leave".equals(l.getLeaveType().getName())).count());
+            report.setPaidLeaves((int) leaves.stream().filter(l -> "Paid Leave".equals(l.getLeaveType().getName())).count());
+            reports.add(report);
+        }
+        return reports;
+    }
+
+    @Override
+    public List<LeaveReportResponse> getEmployeeWiseReport() {
+        List<User> users = userRepository.findAll();
+        List<LeaveReportResponse> reports = new ArrayList<>();
+
+        for (User user : users) {
+            List<LeaveApplication> leaves = leaveApplicationRepository.findByUserId(user.getId());
+            
+            LeaveReportResponse report = new LeaveReportResponse();
+            report.setName(user.getFirstName() + " " + user.getLastName());
+            report.setDepartment(user.getDepartment() != null ? user.getDepartment().getName() : "N/A");
+            report.setTotalLeaves(leaves.size());
+            report.setApprovedLeaves((int) leaves.stream().filter(l -> l.getStatus() == LeaveStatus.APPROVED).count());
+            report.setPendingLeaves((int) leaves.stream().filter(l -> l.getStatus() == LeaveStatus.PENDING).count());
+            report.setRejectedLeaves((int) leaves.stream().filter(l -> l.getStatus() == LeaveStatus.REJECTED).count());
+            report.setCasualLeaves((int) leaves.stream().filter(l -> "Casual Leave".equals(l.getLeaveType().getName())).count());
+            report.setSickLeaves((int) leaves.stream().filter(l -> "Sick Leave".equals(l.getLeaveType().getName())).count());
+            report.setPaidLeaves((int) leaves.stream().filter(l -> "Paid Leave".equals(l.getLeaveType().getName())).count());
+            reports.add(report);
+        }
+        return reports;
     }
 }

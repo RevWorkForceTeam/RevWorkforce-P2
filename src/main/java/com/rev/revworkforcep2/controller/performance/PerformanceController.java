@@ -21,7 +21,7 @@ public class PerformanceController {
     private final PerformanceReviewService reviewService;
     private final GoalService goalService;
 
-    // ================= REVIEW APIs =================
+    // Review api's
 
     @PostMapping("/reviews")
     @PreAuthorize("hasRole('EMPLOYEE')")
@@ -67,7 +67,7 @@ public class PerformanceController {
     }
 
     @PostMapping("/reviews/manual")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN','MANAGER')")
     public ResponseEntity<ApiResponse<PerformanceReviewResponse>> createPerformanceReview(
             @RequestBody CreatePerformanceReviewRequest request) {
 
@@ -75,6 +75,21 @@ public class PerformanceController {
                 ApiResponse.success(
                         200,
                         "Performance review created successfully",
+                        reviewService.createPerformanceReview(request)
+                )
+        );
+    }
+
+    @PostMapping("/reviews/self")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<ApiResponse<PerformanceReviewResponse>> createSelfReview(
+            @RequestBody CreatePerformanceReviewRequest request) {
+        // Force employeeId to null so service uses current user
+        request.setEmployeeId(null);
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Self review created successfully",
                         reviewService.createPerformanceReview(request)
                 )
         );
@@ -122,6 +137,28 @@ public class PerformanceController {
         );
     }
 
+    @GetMapping("/reviews/me")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
+    public ResponseEntity<ApiResponse<List<PerformanceReviewResponse>>> getMyReviews() {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "My reviews fetched successfully",
+                        reviewService.getMyReviews())
+        );
+    }
+
+    @GetMapping("/reviews/team")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<List<PerformanceReviewResponse>>> getTeamReviews() {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Team reviews fetched successfully",
+                        reviewService.getTeamReviews())
+        );
+    }
+
     @GetMapping("/reviews")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<PerformanceReviewResponse>>> getAllReviews() {
@@ -151,9 +188,8 @@ public class PerformanceController {
         );
     }
 
-    // ================= GOAL APIs =================
+    // goal Api's
 
-    // ✅ UPDATED HERE
     @PostMapping("/goals")
     @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public ResponseEntity<ApiResponse<GoalResponse>> createGoal(
@@ -168,7 +204,7 @@ public class PerformanceController {
         );
     }
 
-    // ✅ UPDATED HERE
+
     @PutMapping("/goals/progress")
     @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public ResponseEntity<ApiResponse<GoalResponse>> updateGoalProgress(
@@ -207,6 +243,52 @@ public class PerformanceController {
                         "All goals fetched successfully",
                         goalService.getAllGoals()
                 )
+        );
+    }
+
+    @GetMapping("/goals/me")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
+    public ResponseEntity<ApiResponse<List<GoalResponse>>> getMyGoals() {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "My goals fetched successfully",
+                        goalService.getMyGoals()
+                )
+        );
+    }
+
+    @GetMapping("/goals/team")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<List<GoalResponse>>> getTeamGoals() {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Team goals fetched successfully",
+                        goalService.getTeamGoals()
+                )
+        );
+    }
+
+    @PutMapping("/goals/comment")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<GoalResponse>> addManagerComment(
+            @RequestBody AddGoalCommentRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        200,
+                        "Comment added successfully",
+                        goalService.addManagerComment(request)
+                )
+        );
+    }
+
+    @DeleteMapping("/goals/{id}")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteGoal(@PathVariable Long id) {
+        goalService.deleteGoal(id);
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "Goal deleted successfully", null)
         );
     }
 }

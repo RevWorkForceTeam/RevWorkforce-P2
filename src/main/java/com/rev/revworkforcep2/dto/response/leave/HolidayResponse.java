@@ -9,5 +9,5 @@ import lombok.Setter;
 public class HolidayResponse {
     private Long id;
     private String name;
-    private LocalDate holidayDate; // camelCase
+    private LocalDate holidayDate;
 }

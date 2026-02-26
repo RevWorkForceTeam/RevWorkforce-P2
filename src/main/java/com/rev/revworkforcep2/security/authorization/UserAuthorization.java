@@ -18,18 +18,18 @@ public class UserAuthorization {
         User currentUser = userRepository.findByEmail(email).orElse(null);
         if (currentUser == null) return false;
 
-        // ADMIN can access anyone
+        // Admin can access anyone
         if (currentUser.getRole().name().equals("ADMIN")) {
             return true;
         }
 
-        // EMPLOYEE can access only self
+        // Employee can access only employee
         if (currentUser.getRole().name().equals("EMPLOYEE")
                 && currentUser.getId().equals(userId)) {
             return true;
         }
 
-        // MANAGER can access direct reportees
+        // Manager can access direct reportees
         if (currentUser.getRole().name().equals("MANAGER")) {
 
             return userRepository

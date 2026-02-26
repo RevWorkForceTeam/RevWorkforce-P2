@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class SubmitPerformanceReviewRequest {
 
-    private Long reviewId;   // Required
+    private Long reviewId;
 }

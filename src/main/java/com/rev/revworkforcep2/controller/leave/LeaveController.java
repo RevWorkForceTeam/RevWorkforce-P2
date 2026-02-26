@@ -275,9 +275,8 @@ public class LeaveController {
     private final LeaveApplicationService leaveApplicationService;
     private final LeaveTypeService leaveTypeService;
 
-    // =========================================================
-    // 🔹 LEAVE TYPE (ADMIN)
-    // =========================================================
+
+    // Leave type(admin)
 
     @PostMapping("/types")
     @PreAuthorize("hasRole('ADMIN')")
@@ -328,9 +327,9 @@ public class LeaveController {
         );
     }
 
-    // =========================================================
-    // 🔹 LEAVE BALANCE
-    // =========================================================
+
+    //  Leave Balance
+
 
     @GetMapping("/balance/me")
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
@@ -355,9 +354,9 @@ public class LeaveController {
         );
     }
 
-    // =========================================================
-    // 🔹 HOLIDAYS
-    // =========================================================
+
+    //  Holidays
+
 
     @PostMapping("/holidays")
     @PreAuthorize("hasRole('ADMIN')")
@@ -395,9 +394,9 @@ public class LeaveController {
         );
     }
 
-    // =========================================================
-    // 🔹 LEAVE APPLICATION
-    // =========================================================
+
+    // Leave Application
+
 
     @PostMapping
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
@@ -448,9 +447,8 @@ public class LeaveController {
         );
     }
 
-    // =========================================================
-    // 🔹 VIEW LEAVES
-    // =========================================================
+
+    // View leaves
 
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('EMPLOYEE','MANAGER','ADMIN')")
@@ -483,6 +481,39 @@ public class LeaveController {
                         "Team calendar fetched successfully",
                         leaveApplicationService.getTeamCalendar()
                 )
+        );
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<LeaveApplicationResponse>>> getAllLeaves() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200,
+                        "All leave applications fetched successfully",
+                        leaveApplicationService.getAllLeaves())
+        );
+    }
+
+    @GetMapping("/reports/department")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<LeaveReportResponse>>> getDepartmentWiseReport() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200,
+                        "Department-wise leave report generated",
+                        leaveApplicationService.getDepartmentWiseReport())
+        );
+    }
+
+    @GetMapping("/reports/employee")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<LeaveReportResponse>>> getEmployeeWiseReport() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(200,
+                        "Employee-wise leave report generated",
+                        leaveApplicationService.getEmployeeWiseReport())
         );
     }
 }

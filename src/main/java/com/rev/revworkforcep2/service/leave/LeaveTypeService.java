@@ -20,5 +20,5 @@ public interface LeaveTypeService {
 
     void deleteLeaveType(Long id);
 
-    //List<LeaveType> getAllLeaveTypeEntities();
+
 }

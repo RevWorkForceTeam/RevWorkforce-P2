@@ -105,13 +105,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationMapper mapper;
     private final UserRepository userRepository;
 
-    // 🔹 ADMIN → View all notifications
+
     @Override
     public List<NotificationResponse> getAll() {
         return mapper.toResponseList(repository.findAll());
     }
 
-    // 🔹 ALL USERS → View only their own notifications
+
     @Override
     public List<NotificationResponse> getMyNotifications() {
 
@@ -128,7 +128,7 @@ public class NotificationServiceImpl implements NotificationService {
         );
     }
 
-    // 🔹 Mark notification as read
+
     @Override
     public void markAsRead(Long id) {
 
@@ -138,10 +138,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         notification.setReadStatus(true);
 
-        repository.save(notification);  // 🔥 important
+        repository.save(notification);
     }
 
-    // 🔹 Trigger notification for all users
+
     @Override
     public void triggerForAllUsers(String message, String type) {
 
@@ -159,7 +159,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    // 🔹 Trigger notification for specific user
+
     @Override
     public void triggerForUser(Long userId, String message, String type) {
 
@@ -187,5 +187,13 @@ public class NotificationServiceImpl implements NotificationService {
         Long userId = userDetails.getId();
 
         return repository.countByUser_IdAndReadStatusFalse(userId);
+    }
+
+    @Override
+    public void markAllAsRead() {
+        Long userId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        List<Notification> notifications = repository.findByUser_IdAndReadStatusFalse(userId);
+        notifications.forEach(n -> n.setReadStatus(true));
+        repository.saveAll(notifications);
     }
 }

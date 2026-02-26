@@ -4,9 +4,9 @@ import lombok.Data;
 @Data
 public class CreatePerformanceReviewRequest {
 
-    private Long employeeId;      // Required
+    private Long employeeId;
 
-    private Integer year;         // Required
+    private Integer year;
 
     private String deliverables;
 
@@ -14,6 +14,6 @@ public class CreatePerformanceReviewRequest {
 
     private String improvements;
 
-    private Integer selfRating;   // Must be between 1 and 5
+    private Integer selfRating;
 }
 

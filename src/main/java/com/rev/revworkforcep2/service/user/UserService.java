@@ -8,9 +8,14 @@ import java.util.List;
 
 public interface UserService {
 
-    // =====================================================
-    // CREATE & UPDATE
-    // =====================================================
+
+
+    UserResponse getMyProfile();
+
+    UserResponse updateMyProfile(UpdateUserRequest request);
+
+    void changeMyPassword(String currentPassword, String newPassword);
+
 
     UserResponse createUser(CreateUserRequest request);
 
@@ -18,15 +23,11 @@ public interface UserService {
 
     UserResponse assignManager(Long userId, Long managerId);
 
-    // =====================================================
-    // SINGLE USER (FULL DETAILS)
-    // =====================================================
+
 
     UserResponse getUserById(Long id);
 
-    // =====================================================
-    // LIST / DIRECTORY (SUMMARY ONLY)
-    // =====================================================
+
 
     List<UserSummaryResponse> getAllUsers();
 
@@ -41,9 +42,7 @@ public interface UserService {
             String role
     );
 
-    // =====================================================
-    // STATUS MANAGEMENT
-    // =====================================================
+
 
     void deactivateUser(Long id);
 

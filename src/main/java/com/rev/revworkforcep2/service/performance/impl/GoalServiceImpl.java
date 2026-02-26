@@ -1,5 +1,6 @@
 package com.rev.revworkforcep2.service.performance.impl;
 
+import com.rev.revworkforcep2.dto.request.performance.AddGoalCommentRequest;
 import com.rev.revworkforcep2.dto.request.performance.CreateGoalRequest;
 import com.rev.revworkforcep2.dto.request.performance.UpdateGoalProgressRequest;
 import com.rev.revworkforcep2.dto.response.performance.GoalResponse;
@@ -12,6 +13,7 @@ import com.rev.revworkforcep2.model.User;
 import com.rev.revworkforcep2.repository.GoalRepository;
 import com.rev.revworkforcep2.repository.UserRepository;
 import com.rev.revworkforcep2.service.performance.GoalService;
+import com.rev.revworkforcep2.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +26,17 @@ public class GoalServiceImpl implements GoalService {
     private final GoalRepository goalRepository;
     private final UserRepository userRepository;
     private final PerformanceMapper performanceMapper;
+    private final NotificationService notificationService;
 
-    // ================= CREATE GOAL =================
     @Override
     public GoalResponse createGoal(CreateGoalRequest request) {
 
-        User employee = userRepository.findById(request.getEmployeeId())
+        Long employeeId = request.getEmployeeId();
+        if (employeeId == null) {
+            employeeId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        }
+
+        User employee = userRepository.findById(employeeId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Employee not found"));
 
@@ -43,7 +50,6 @@ public class GoalServiceImpl implements GoalService {
         return performanceMapper.toGoalResponse(savedGoal);
     }
 
-    // ================= GET BY ID =================
     @Override
     public GoalResponse getGoalById(Long id) {
 
@@ -54,7 +60,6 @@ public class GoalServiceImpl implements GoalService {
         return performanceMapper.toGoalResponse(goal);
     }
 
-    // ================= GET ALL BY EMPLOYEE =================
     @Override
     public List<GoalResponse> getAllGoalsByEmployee(Long employeeId) {
 
@@ -68,7 +73,6 @@ public class GoalServiceImpl implements GoalService {
                 .toList();
     }
 
-    // ================= GET ALL GOALS =================
     @Override
     public List<GoalResponse> getAllGoals() {
 
@@ -78,7 +82,43 @@ public class GoalServiceImpl implements GoalService {
                 .toList();
     }
 
-    // ================= DELETE GOAL =================
+    @Override
+    public List<GoalResponse> getMyGoals() {
+        Long userId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        return goalRepository.findByUserId(userId)
+                .stream()
+                .map(performanceMapper::toGoalResponse)
+                .toList();
+    }
+
+    @Override
+    public List<GoalResponse> getTeamGoals() {
+        Long managerId = com.rev.revworkforcep2.security.util.SecurityUtils.getCurrentUserId();
+        return goalRepository.findByUserManagerId(managerId)
+                .stream()
+                .map(performanceMapper::toGoalResponse)
+                .toList();
+    }
+
+    @Override
+    public GoalResponse addManagerComment(AddGoalCommentRequest request) {
+        Goal goal = goalRepository.findById(request.getGoalId())
+                .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+
+        goal.setManagerComment(request.getComment());
+        Goal savedGoal = goalRepository.save(goal);
+
+
+        String message = String.format(
+                "Your manager has reviewed your goal: <strong>%s</strong>. <span style='color:#10b981;'>Comment: %s</span>",
+                goal.getTitle(),
+                request.getComment()
+        );
+        notificationService.triggerForUser(goal.getUser().getId(), message, "GOAL_COMMENT");
+
+        return performanceMapper.toGoalResponse(savedGoal);
+    }
+
     @Override
     public void deleteGoal(Long id) {
 
@@ -89,26 +129,6 @@ public class GoalServiceImpl implements GoalService {
         goalRepository.delete(goal);
     }
 
-    // ================= UPDATE PROGRESS =================
-//    @Override
-//    public GoalResponse updateGoalProgress(Long goalId, Integer progress) {
-//
-//        Goal goal = goalRepository.findById(goalId)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException("Goal not found"));
-//
-//        goal.setProgress(progress);
-//
-//        if (progress != null && progress == 100) {
-//            goal.setStatus(GoalStatus.COMPLETED);
-//        } else {
-//            goal.setStatus(GoalStatus.IN_PROGRESS);
-//        }
-//
-//        Goal savedGoal = goalRepository.save(goal);
-//
-//        return performanceMapper.toGoalResponse(savedGoal);
-//    }
     @Override
     public GoalResponse updateGoalProgress(
             UpdateGoalProgressRequest request) {
@@ -131,7 +151,6 @@ public class GoalServiceImpl implements GoalService {
 
         goal.setProgress(request.getProgress());
 
-        // Update status based on progress
         if (request.getProgress() == 0) {
             goal.setStatus(GoalStatus.NOT_STARTED);
         } else if (request.getProgress() < 100) {

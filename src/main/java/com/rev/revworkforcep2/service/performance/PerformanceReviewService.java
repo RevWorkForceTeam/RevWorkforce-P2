@@ -11,6 +11,11 @@ public interface PerformanceReviewService {
     PerformanceReviewResponse createReview(CreateReviewRequest request);
 
     PerformanceReviewResponse getReviewById(Long id);
+    
+    List<PerformanceReviewResponse> getMyReviews();
+    
+    List<PerformanceReviewResponse> getTeamReviews();
+    
     TeamPerformanceSummaryResponse getTeamPerformanceSummary(
             CreateGlobalRequest request);
     PerformanceReviewResponse createPerformanceReview(

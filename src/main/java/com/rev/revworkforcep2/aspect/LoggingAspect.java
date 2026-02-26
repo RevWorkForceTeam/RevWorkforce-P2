@@ -25,7 +25,6 @@ public class LoggingAspect {
         String methodName = joinPoint.getSignature().getName();
         Object[] args = joinPoint.getArgs();
 
-        // ENTRY LOG
         if (logger.isDebugEnabled()) {
             logger.debug(
                     LogConstants.ENTRY,
@@ -48,7 +47,7 @@ public class LoggingAspect {
                     result
             );
 
-            // EXECUTION TIME LOG
+
             logger.debug(
                     LogConstants.EXECUTION_TIME,
                     className,
@@ -56,7 +55,7 @@ public class LoggingAspect {
                     executionTime
             );
 
-            // SLOW EXECUTION WARNING
+
             if (executionTime > 1000) {
                 logger.warn(
                         LogConstants.SLOW_EXECUTION,
@@ -70,7 +69,7 @@ public class LoggingAspect {
 
         } catch (Exception ex) {
 
-            // EXCEPTION LOG (prints full stack trace)
+
             logger.error(
                     LogConstants.EXCEPTION,
                     className,

@@ -23,11 +23,11 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public HolidayResponse createHoliday(CreateHolidayRequest request) {
 
-        Holiday entity = leaveMapper.toEntity(request);   // ✅ FIXED
+        Holiday entity = leaveMapper.toEntity(request);
 
         Holiday saved = holidayRepository.save(entity);
 
-        return leaveMapper.toResponse(saved);   // ✅ FIXED
+        return leaveMapper.toResponse(saved);
     }
 
     @Override
@@ -36,11 +36,11 @@ public class HolidayServiceImpl implements HolidayService {
         Holiday entity = holidayRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Holiday not found"));
 
-        leaveMapper.updateEntity(request, entity);   // ✅ FIXED ORDER
+        leaveMapper.updateEntity(request, entity);
 
         Holiday updated = holidayRepository.save(entity);
 
-        return leaveMapper.toResponse(updated);   // ✅ FIXED
+        return leaveMapper.toResponse(updated);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class HolidayServiceImpl implements HolidayService {
         Holiday entity = holidayRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Holiday not found"));
 
-        return leaveMapper.toResponse(entity);   // ✅ FIXED
+        return leaveMapper.toResponse(entity);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class HolidayServiceImpl implements HolidayService {
 
         return holidayRepository.findAll()
                 .stream()
-                .map(leaveMapper::toResponse)   // ✅ FIXED
+                .map(leaveMapper::toResponse)
                 .toList();
     }
 

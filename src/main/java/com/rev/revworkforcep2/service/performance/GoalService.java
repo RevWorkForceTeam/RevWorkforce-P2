@@ -1,5 +1,6 @@
 package com.rev.revworkforcep2.service.performance;
 
+import com.rev.revworkforcep2.dto.request.performance.AddGoalCommentRequest;
 import com.rev.revworkforcep2.dto.request.performance.CreateGoalRequest;
 import com.rev.revworkforcep2.dto.request.performance.UpdateGoalProgressRequest;
 import com.rev.revworkforcep2.dto.response.performance.GoalResponse;
@@ -15,7 +16,8 @@ public interface GoalService {
 
     void deleteGoal(Long id);
     List<GoalResponse> getAllGoals();
+    List<GoalResponse> getMyGoals();
     GoalResponse updateGoalProgress(UpdateGoalProgressRequest request);
-
-
+    List<GoalResponse> getTeamGoals();
+    GoalResponse addManagerComment(AddGoalCommentRequest request);
 }

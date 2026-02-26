@@ -122,9 +122,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
-    // ----------------------------
-    // Manager Self Reference
-    // ----------------------------
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
@@ -135,17 +133,13 @@ public class User extends BaseEntity {
     @JsonIgnore
     private List<User> reportees;
 
-    // ----------------------------
-    // Department Mapping
-    // ----------------------------
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private Department department;
 
-    // ----------------------------
-    // Designation Mapping
-    // ----------------------------
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "designation_id")

@@ -14,7 +14,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handle Custom Application Exceptions
+
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<ApiResponse<Object>> handleApplicationException(ApplicationException ex) {
 
@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
     }
 
-    // Handle Validation Errors
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationException(
             MethodArgumentNotValidException ex) {
@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    // 🔥 IMPORTANT: Handle Access Denied (Security)
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
             AccessDeniedException ex) {
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
-    // Handle All Other Exceptions
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneralException(Exception ex) {
 
