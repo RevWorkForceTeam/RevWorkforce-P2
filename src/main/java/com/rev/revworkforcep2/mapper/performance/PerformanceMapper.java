@@ -21,6 +21,7 @@ public interface PerformanceMapper {
 
     PerformanceReview toReviewEntity(CreateReviewRequest request);
 
+    @Mapping(target = "improvements", source = "improvements")
     PerformanceReview toReviewEntity(CreatePerformanceReviewRequest request);
 
     @Mapping(target = "employeeId", source = "user.id")

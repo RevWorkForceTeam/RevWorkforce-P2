@@ -15,7 +15,7 @@ export class PerformanceService {
 
   // Reviews
   getMyReviews() { return this.http.get<any>(`${this.api}/performance/reviews/me`).pipe(map((res: any) => res.data || res)); }
-  createReview(data: any) { return this.http.post<any>(`${this.api}/performance/reviews/self`, data).pipe(map((res: any) => res.data || res)); }
+  createReview(data: any) { return this.http.post<any>(`${this.api}/performance/reviews/manual`, data).pipe(map((res: any) => res.data || res)); }
   submitReview(reviewId: number) { return this.http.put<any>(`${this.api}/performance/reviews/submit`, { reviewId }).pipe(map((res: any) => res.data || res)); }
   
   // Manager

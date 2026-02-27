@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -232,10 +233,10 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                         new ResourceNotFoundException("Employee not found"));
 
 
-        if (reviewRepository
-                .findByUserIdAndYear(employee.getId(), request.getYear())
-                .isPresent()) {
-
+        Optional<PerformanceReview> existingReview = reviewRepository
+                .findByUserIdAndYear(employee.getId(), request.getYear());
+        
+        if (existingReview.isPresent()) {
             throw new InvalidRequestException(
                     "Performance review already exists for year "
                             + request.getYear());
@@ -332,6 +333,18 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                     "<strong>" + review.getUser().getFirstName() + " " + review.getUser().getLastName() + "</strong> submitted a performance review.",
                     "PERFORMANCE"
             );
+        } else {
+            // If no manager, notify admin
+            List<User> admins = userRepository.findAll().stream()
+                    .filter(u -> Role.ADMIN.equals(u.getRole()))
+                    .toList();
+            if (!admins.isEmpty()) {
+                notificationService.triggerForUser(
+                        admins.get(0).getId(),
+                        "<strong>" + review.getUser().getFirstName() + " " + review.getUser().getLastName() + "</strong> submitted a performance review.",
+                        "PERFORMANCE"
+                );
+            }
         }
 
         return performanceMapper.toReviewResponse(savedReview);
