@@ -64,10 +64,12 @@ export class MyReviewsComponent implements OnInit {
         this.showCreateModal = false;
         this.resetForm();
         this.loadReviews();
+        alert('Review created successfully!');
       },
       error: (err) => {
         this.isSubmitting = false;
-        alert(err.error?.message || 'Failed to create review');
+        const errorMsg = err.error?.message || 'Failed to create review';
+        alert(errorMsg);
       }
     });
   }

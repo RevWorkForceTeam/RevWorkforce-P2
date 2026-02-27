@@ -80,21 +80,6 @@ public class PerformanceController {
         );
     }
 
-    @PostMapping("/reviews/self")
-    @PreAuthorize("hasRole('EMPLOYEE')")
-    public ResponseEntity<ApiResponse<PerformanceReviewResponse>> createSelfReview(
-            @RequestBody CreatePerformanceReviewRequest request) {
-        // Force employeeId to null so service uses current user
-        request.setEmployeeId(null);
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        200,
-                        "Self review created successfully",
-                        reviewService.createPerformanceReview(request)
-                )
-        );
-    }
-
     @PostMapping("/reviews/team-summary")
     @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<TeamPerformanceSummaryResponse>> getTeamSummary(

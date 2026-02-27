@@ -47,6 +47,25 @@ public class GoalServiceImpl implements GoalService {
 
         Goal savedGoal = goalRepository.save(goal);
 
+        if (employee.getManager() != null) {
+            notificationService.triggerForUser(
+                    employee.getManager().getId(),
+                    "<strong>" + employee.getFirstName() + " " + employee.getLastName() + "</strong> created a new goal: " + goal.getTitle(),
+                    "GOAL"
+            );
+        } else {
+            List<User> admins = userRepository.findAll().stream()
+                    .filter(u -> com.rev.revworkforcep2.model.Role.ADMIN.equals(u.getRole()))
+                    .toList();
+            if (!admins.isEmpty()) {
+                notificationService.triggerForUser(
+                        admins.get(0).getId(),
+                        "<strong>" + employee.getFirstName() + " " + employee.getLastName() + "</strong> created a new goal: " + goal.getTitle(),
+                        "GOAL"
+                );
+            }
+        }
+
         return performanceMapper.toGoalResponse(savedGoal);
     }
 

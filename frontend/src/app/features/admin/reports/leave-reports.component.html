@@ -113,8 +113,8 @@
                       <td style="white-space:nowrap;vertical-align:middle;"><strong>{{ emp.employeeId }}</strong></td>
                       <td style="white-space:nowrap;vertical-align:middle;">{{ emp.name }}</td>
                       <td style="white-space:nowrap;vertical-align:middle;">{{ emp.email }}</td>
-                      <td style="white-space:nowrap;vertical-align:middle;">{{ emp.department }}</td>
-                      <td style="white-space:nowrap;vertical-align:middle;">{{ emp.designation }}</td>
+                      <td style="white-space:nowrap;vertical-align:middle;">{{ emp.departmentName || '-' }}</td>
+                      <td style="white-space:nowrap;vertical-align:middle;">{{ emp.designationTitle || '-' }}</td>
                       <td style="white-space:nowrap;text-align:center;vertical-align:middle;"><span class="badge-status" style="background:#8b5cf6;">{{ emp.role }}</span></td>
                       <td style="white-space:nowrap;text-align:center;vertical-align:middle;"><span class="badge-status" [class.badge-active]="emp.active" [class.badge-inactive]="!emp.active">{{ emp.active ? 'Active' : 'Inactive' }}</span></td>
                     </tr>
